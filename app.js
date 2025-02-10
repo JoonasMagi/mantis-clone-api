@@ -15,6 +15,7 @@ app.use(express.json());
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Routes
+app.use('/api/auth', require('./authRoutes'));
 app.use('/api', require('./routes'));
 
 // Error handling middleware

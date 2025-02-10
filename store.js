@@ -12,11 +12,12 @@ const store = {
 // Helper functions for CRUD operations
 const Store = {
     // Issues
-    createIssue(issueData) {
+    createIssue(issueData, userId) {
         const id = uuidv4();
         const issue = {
             id,
             ...issueData,
+            userId,
             createdAt: new Date(),
             updatedAt: new Date()
         };
