@@ -7,10 +7,22 @@ info:
     name: API Support
     email: support@mantisclone.com
 
+tags:
+  - name: Issues
+    description: Operations related to issues
+  - name: Labels
+    description: Operations related to labels
+  - name: Comments
+    description: Operations related to comments
+  - name: Milestones
+    description: Operations related to milestones
+  - name: Auth
+    description: Operations related to user registration, login, logout, and profile
+
 servers:
-  - url: https://api.mantisclone.com/v1
+  - url: http://localhost:3000/
     description: Production server
-  - url: https://staging-api.mantisclone.com/v1
+  - url: http://localhost:3000/
     description: Staging server
 
 components:
@@ -142,9 +154,186 @@ components:
         - title
         - due_date
 
+    AuthCredentials:
+      type: object
+      properties:
+        username:
+          type: string
+          description: The user’s username
+        password:
+          type: string
+          description: The user’s password
+      required:
+        - username
+        - password
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Auto-incremented user ID
+        username:
+          type: string
+          description: Unique username
+
 paths:
+  #######################
+  # Auth Routes
+  #######################
+  /register:
+    post:
+      tags:
+        - Auth
+      summary: Register a new user
+      description: Creates a new user with a username and password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthCredentials'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user_id:
+                    type: integer
+        '400':
+          description: Invalid input (e.g., missing username or password)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Username already taken
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /login:
+    post:
+      tags:
+        - Auth
+      summary: Log in a user
+      description: Authenticates a user by username and password, then creates a session.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthCredentials'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid input (missing username or password)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Invalid username or password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /logout:
+    post:
+      tags:
+        - Auth
+      summary: Log out the current user
+      description: Destroys the current session.
+      responses:
+        '200':
+          description: Successfully logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '401':
+          description: User is not logged in
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /profile:
+    get:
+      tags:
+        - Auth
+      summary: Get the logged-in user’s profile
+      description: Returns the user data from the current session.
+      responses:
+        '200':
+          description: Returns user profile data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: User is not logged in (no valid session)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  #######################
+  # Issues, Comments, Labels, Milestones
+  #######################
   /issues:
     get:
+      tags:
+        - Issues
       summary: List all issues
       parameters:
         - name: status
@@ -212,8 +401,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
     post:
+      tags:
+        - Issues
       summary: Create a new issue
       requestBody:
         required: true
@@ -240,6 +443,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /issues/{issueId}:
     parameters:
@@ -251,6 +460,8 @@ paths:
           format: uuid
 
     get:
+      tags:
+        - Issues
       summary: Get issue details
       responses:
         '200':
@@ -265,8 +476,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
     patch:
+      tags:
+        - Issues
       summary: Update an issue
       requestBody:
         required: true
@@ -293,14 +512,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
     delete:
+      tags:
+        - Issues
       summary: Delete an issue
       responses:
         '204':
           description: Issue deleted successfully
         '404':
           description: Issue not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
           content:
             application/json:
               schema:
@@ -316,6 +549,8 @@ paths:
           format: uuid
 
     get:
+      tags:
+        - Comments
       summary: List comments for an issue
       responses:
         '200':
@@ -332,8 +567,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
     post:
+      tags:
+        - Comments
       summary: Add a comment to an issue
       requestBody:
         required: true
@@ -360,9 +603,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /labels:
     get:
+      tags:
+        - Labels
       summary: List all labels
       responses:
         '200':
@@ -373,8 +624,16 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Label'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
     post:
+      tags:
+        - Labels
       summary: Create a new label
       requestBody:
         required: true
@@ -395,9 +654,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /milestones:
     get:
+      tags:
+        - Milestones
       summary: List all milestones
       parameters:
         - name: status
@@ -414,8 +681,16 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Milestone'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
     post:
+      tags:
+        - Milestones
       summary: Create a new milestone
       requestBody:
         required: true
@@ -432,6 +707,33 @@ paths:
                 $ref: '#/components/schemas/Milestone'
         '400':
           description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ----------------------------------------------------------------------
+  # Fallback route for any path not defined above (documented 404).
+  # ----------------------------------------------------------------------
+  '/{wildcard*}':
+    get:
+      summary: Fallback for undefined routes
+      description: Returns a 404 error for any route that isn't explicitly defined.
+      parameters:
+        - name: wildcard
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '404':
+          description: This route always returns Not Found
           content:
             application/json:
               schema:
