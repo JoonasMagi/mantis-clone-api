@@ -35,29 +35,29 @@ http://localhost:3000/api-docs/ # Swagger UI
 
 ### Issues<br>
 
-GET /issues - List all issues (with filtering)
-POST /issues - Create a new issue
-GET /issues/{issueId} - Get issue details
-PATCH /issues/{issueId} - Update an issue
-DELETE /issues/{issueId} - Delete an issue
+GET /issues - List all issues (with filtering)<br>
+POST /issues - Create a new issue<br>
+GET /issues/{issueId} - Get issue details<br>
+PATCH /issues/{issueId} - Update an issue<br>
+DELETE /issues/{issueId} - Delete an issue<br>
 
-### Comments
+### Comments<br>
 
-GET /issues/{issueId}/comments - List comments for an issue
-POST /issues/{issueId}/comments - Add a comment to an issue
+GET /issues/{issueId}/comments - List comments for an issue<br>
+POST /issues/{issueId}/comments - Add a comment to an issue<br>
 
-### Labels
+### Labels<br>
 
-GET /labels - List all labels
-POST /labels - Create a new label
+GET /labels - List all labels<br>
+POST /labels - Create a new label<br>
 
-### Milestones
+### Milestones<br>
 
-GET /milestones - List all milestones
-POST /milestones - Create a new milestone
+GET /milestones - List all milestones<br>
+POST /milestones - Create a new milestone<br>
 
-### Error Handling
-The API uses conventional HTTP response codes:
-2xx - Success
-4xx - Client errors
-5xx - Server errors
+### Error Handling<br>
+The API uses conventional HTTP response codes:<br>
+2xx - Success<br>
+4xx - Client errors<br>
+5xx - Server errors<br>
