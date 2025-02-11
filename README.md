@@ -59,13 +59,6 @@ When you start the server for the first time, the following tables are created:
 - `comments` (for user discussions on issues)
 - `milestones` (for project tracking)
 
-### Reset the Database
-To reset your database, delete `database.sqlite` and restart the server:
-```bash
-rm database.sqlite
-npm start
-```
-
 ---
 
 ## 🔑 Authentication
@@ -93,7 +86,7 @@ curl -X GET http://localhost:3000/profile -b cookies.txt
 
 4. **Logout**
 ```bash
-curl -X POST http://localhost:3000/logout -b cookies.txt
+curl -X DELETE http://localhost:3000/logout -b cookies.txt
 ```
 
 ---
@@ -105,7 +98,7 @@ curl -X POST http://localhost:3000/logout -b cookies.txt
 |--------|-------------|-------------|
 | POST   | /register   | Register a new user |
 | POST   | /login      | Log in a user |
-| POST   | /logout     | Log out user |
+| DELETE | /logout     | Log out user |
 | GET    | /profile    | Get logged-in user details |
 
 ### 📌 Issue Routes
