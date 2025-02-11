@@ -13,30 +13,24 @@ A basic issue tracker API built with **Express.js**, **SQLite**, **Session-based
 
 ## 🚀 Getting Started
 
-### 1️⃣ Prerequisites
+### Prerequisites
 Ensure you have the following installed:
 - **Node.js** (>=14)
 - **npm** (Node Package Manager)
 
-### 2️⃣ Clone the Repository
-```bash
-git clone https://github.com/your-username/mantis-clone-api.git
-cd mantis-clone-api
-```
-
-### 3️⃣ Install Dependencies
+### Install Dependencies
 ```bash
 npm install
 ```
 
-### 4️⃣ Create an `.env` File
+### Create an `.env` File
 Create a `.env` file in the project root and add the following:
 ```env
 PORT=3000
 SESSION_SECRET=your_secret_key
 ```
 
-### 5️⃣ Run the Server
+### Run the Server
 ```bash
 npm start
 ```
@@ -98,10 +92,8 @@ curl -X GET http://localhost:3000/profile -b cookies.txt
 
 4. **Logout**
 ```bash
-curl -X POST http://localhost:3000/logout -b cookies.txt
+curl -X DELETE http://localhost:3000/logout -b cookies.txt
 ```
-
----
 
 ## 📝 API Endpoints
 
@@ -110,7 +102,7 @@ curl -X POST http://localhost:3000/logout -b cookies.txt
 |--------|-------------|-------------|
 | POST   | /register   | Register a new user |
 | POST   | /login      | Log in a user |
-| POST   | /logout     | Log out user |
+| DELETE | /logout     | Log out user |
 | GET    | /profile    | Get logged-in user details |
 
 ### 📌 Issue Routes
@@ -160,30 +152,6 @@ Common error responses:
 | 403 | Forbidden |
 | 404 | Not Found |
 | 500 | Internal Server Error |
-
----
-
-## 📌 Development Notes
-- **Database**: Uses **SQLite**.
-- **Sessions**: Uses `express-session` with `connect-sqlite3`.
-- **Password Hashing**: Uses `bcrypt` for secure password storage.
-- **Documentation**: Uses **Swagger UI** for API reference.
-
----
-
-## 🎯 Future Enhancements
-- Add **email verification** for new users.
-- Implement **role-based access control** (RBAC).
-- Add support for **OAuth login** (Google, GitHub, etc.).
-
----
-
-## 👨‍💻 Contributing
-1. Fork the repository.
-2. Create a feature branch: `git checkout -b feature-name`.
-3. Commit changes: `git commit -m 'Add new feature'`.
-4. Push to the branch: `git push origin feature-name`.
-5. Submit a pull request!
 
 ---
 
