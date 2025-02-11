@@ -17,7 +17,9 @@ tags:
   - name: Milestones
     description: Operations related to milestones
   - name: Auth
-    description: Operations related to user registration, login, logout, and profile
+    description: Operations related to user registration
+  - name: Session
+    description: Operations related to user session management (login, logout, profile)
   - name: Wildcard
     description: Fallback route for undefined paths
 
@@ -181,7 +183,7 @@ components:
 
 paths:
   #######################
-  # Auth Routes
+  # Auth Routes (Registration)
   #######################
   /register:
     post:
@@ -226,10 +228,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  #######################
+  # Session Routes (Login, Logout, Profile)
+  #######################
   /login:
     post:
       tags:
-        - Auth
+        - Session
       summary: Log in a user
       description: Authenticates a user by username and password, then creates a session.
       requestBody:
@@ -270,9 +275,9 @@ paths:
                 $ref: '#/components/schemas/Error'
 
   /logout:
-    post:
+    delete:
       tags:
-        - Auth
+        - Session
       summary: Log out the current user
       description: Destroys the current session.
       responses:
@@ -301,7 +306,7 @@ paths:
   /profile:
     get:
       tags:
-        - Auth
+        - Session
       summary: Get the logged-in user’s profile
       description: Returns the user data from the current session.
       responses:
@@ -723,13 +728,14 @@ paths:
   # ----------------------------------------------------------------------
   # Fallback route for any path not defined above (documented 404).
   # ----------------------------------------------------------------------
-  /{wildcard*}:
+  '/{wildcard*}':
     get:
       tags:
         - Wildcard
       summary: Fallback for undefined routes
       description: Returns a 404 error for any route that isn't explicitly defined.
       parameters:
+        - name: wildcard
           in: path
           required: true
           schema:
