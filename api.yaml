@@ -18,6 +18,8 @@ tags:
     description: Operations related to milestones
   - name: Auth
     description: Operations related to user registration, login, logout, and profile
+  - name: Wildcard
+    description: Fallback route for undefined paths
 
 servers:
   - url: http://localhost:3000/
@@ -721,12 +723,13 @@ paths:
   # ----------------------------------------------------------------------
   # Fallback route for any path not defined above (documented 404).
   # ----------------------------------------------------------------------
-  '/{wildcard*}':
+  /{wildcard*}:
     get:
+      tags:
+        - Wildcard
       summary: Fallback for undefined routes
       description: Returns a 404 error for any route that isn't explicitly defined.
       parameters:
-        - name: wildcard
           in: path
           required: true
           schema:
