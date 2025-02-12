@@ -1,3 +1,4 @@
+// Run: node app.js
 require('dotenv').config();
 
 const express = require('express');
@@ -431,30 +432,44 @@ app.post('/issues/:issueId/comments', (req, res) => {
             message: 'content and author are required.'
         });
     }
-    const now = new Date().toISOString();
-    const newId = uuidv4();
-    db.run(
-        `
-    INSERT INTO comments (id, issue_id, content, author, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?)
-    `,
-        [newId, issueId, content, author, now, now],
-        function (err) {
-            if (err) {
-                return res
-                    .status(500)
-                    .json({ code: 'DB_ERROR', message: err.message });
-            }
-            db.get(`SELECT * FROM comments WHERE id = ?`, [newId], (err2, row) => {
-                if (err2) {
-                    return res
-                        .status(500)
-                        .json({ code: 'DB_ERROR', message: err2.message });
-                }
-                res.status(201).json(row);
+
+    // First check if the issue exists
+    db.get(`SELECT id FROM issues WHERE id = ?`, [issueId], (err, issue) => {
+        if (err) {
+            return res.status(500).json({ code: 'DB_ERROR', message: err.message });
+        }
+        if (!issue) {
+            return res.status(404).json({
+                code: 'NOT_FOUND',
+                message: 'Cannot add comment: Issue not found'
             });
         }
-    );
+
+        const now = new Date().toISOString();
+        const newId = uuidv4();
+        db.run(
+            `
+        INSERT INTO comments (id, issue_id, content, author, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+        `,
+            [newId, issueId, content, author, now, now],
+            function (err) {
+                if (err) {
+                    return res
+                        .status(500)
+                        .json({ code: 'DB_ERROR', message: err.message });
+                }
+                db.get(`SELECT * FROM comments WHERE id = ?`, [newId], (err2, row) => {
+                    if (err2) {
+                        return res
+                            .status(500)
+                            .json({ code: 'DB_ERROR', message: err2.message });
+                    }
+                    res.status(201).json(row);
+                });
+            }
+        );
+    });
 });
 
 // Labels

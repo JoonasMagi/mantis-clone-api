@@ -1130,7 +1130,7 @@ paths:
   #######################
   # Fallback route
   #######################
-  '/{wildcard*}':
+  '/{Wildcard*}':
     get:
       tags:
         - Wildcard
