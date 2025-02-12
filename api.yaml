@@ -116,7 +116,7 @@ components:
             $ref: '#/components/schemas/GetLabel'
         milestone:
           $ref: '#/components/schemas/GetMilestone'
-      # No required properties for partial updates
+      # no required fields
 
     GetIssue:
       type: object
@@ -175,6 +175,21 @@ components:
         - name
         - color
 
+    UpdateLabel:
+      type: object
+      description: Schema for partial updating a label (PATCH)
+      properties:
+        name:
+          type: string
+          maxLength: 50
+        color:
+          type: string
+          pattern: '^#[0-9a-fA-F]{6}$'
+        description:
+          type: string
+          maxLength: 200
+      # no required fields => partial
+
     GetLabel:
       type: object
       description: Schema for retrieving an existing label
@@ -211,6 +226,17 @@ components:
         - issue_id
         - content
         - author
+
+    UpdateComment:
+      type: object
+      description: Schema for partial updating a comment (PATCH)
+      properties:
+        content:
+          type: string
+        author:
+          type: string
+          format: uuid
+      # no required fields => partial
 
     GetComment:
       type: object
@@ -257,6 +283,23 @@ components:
         - due_date
         - status
         - description
+
+    UpdateMilestone:
+      type: object
+      description: Schema for partial updating a milestone (PATCH)
+      properties:
+        title:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+        due_date:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [open, closed]
+      # no required fields => partial
 
     GetMilestone:
       type: object
@@ -556,6 +599,8 @@ paths:
                 $ref: '#/components/schemas/Error'
 
     post:
+      security:
+        - bearerAuth: []
       tags:
         - Issues
       summary: Create a new issue
@@ -625,6 +670,8 @@ paths:
                 $ref: '#/components/schemas/Error'
 
     patch:
+      security:
+        - bearerAuth: []
       tags:
         - Issues
       summary: Update an issue
@@ -661,6 +708,8 @@ paths:
                 $ref: '#/components/schemas/Error'
 
     delete:
+      security:
+        - bearerAuth: []
       tags:
         - Issues
       summary: Delete an issue
@@ -716,6 +765,8 @@ paths:
                 $ref: '#/components/schemas/Error'
 
     post:
+      security:
+        - bearerAuth: []
       tags:
         - Comments
       summary: Add a comment to an issue
@@ -752,6 +803,77 @@ paths:
                 $ref: '#/components/schemas/Error'
 
   #######################
+  # Comments: separate path for patch/delete
+  #######################
+  /comments/{commentId}:
+    parameters:
+      - name: commentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      security:
+        - bearerAuth: []
+      tags:
+        - Comments
+      summary: Update a comment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateComment'
+      responses:
+        '200':
+          description: Comment updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetComment'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Comment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      security:
+        - bearerAuth: []
+      tags:
+        - Comments
+      summary: Delete a comment
+      responses:
+        '204':
+          description: Comment deleted successfully
+        '404':
+          description: Comment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  #######################
   # Labels
   #######################
   /labels:
@@ -776,6 +898,8 @@ paths:
                 $ref: '#/components/schemas/Error'
 
     post:
+      security:
+        - bearerAuth: []
       tags:
         - Labels
       summary: Create a new label
@@ -794,6 +918,74 @@ paths:
                 $ref: '#/components/schemas/GetLabel'
         '400':
           description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /labels/{labelId}:
+    parameters:
+      - name: labelId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      security:
+        - bearerAuth: []
+      tags:
+        - Labels
+      summary: Update an existing label
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLabel'
+      responses:
+        '200':
+          description: Label updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetLabel'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Label not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      security:
+        - bearerAuth: []
+      tags:
+        - Labels
+      summary: Delete a label
+      responses:
+        '204':
+          description: Label deleted successfully
+        '404':
+          description: Label not found
           content:
             application/json:
               schema:
@@ -836,6 +1028,8 @@ paths:
                 $ref: '#/components/schemas/Error'
 
     post:
+      security:
+        - bearerAuth: []
       tags:
         - Milestones
       summary: Create a new milestone
@@ -854,6 +1048,74 @@ paths:
                 $ref: '#/components/schemas/GetMilestone'
         '400':
           description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /milestones/{milestoneId}:
+    parameters:
+      - name: milestoneId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      security:
+        - bearerAuth: []
+      tags:
+        - Milestones
+      summary: Update an existing milestone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMilestone'
+      responses:
+        '200':
+          description: Milestone updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetMilestone'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Milestone not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      security:
+        - bearerAuth: []
+      tags:
+        - Milestones
+      summary: Delete a milestone
+      responses:
+        '204':
+          description: Milestone deleted successfully
+        '404':
+          description: Milestone not found
           content:
             application/json:
               schema:
