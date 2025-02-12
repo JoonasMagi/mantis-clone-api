@@ -1,4 +1,3 @@
-// Load environment variables from .env
 require('dotenv').config();
 
 const express = require('express');
@@ -48,56 +47,56 @@ const db = new sqlite3.Database('database.sqlite', (err) => {
 db.serialize(() => {
     db.run(`
     CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      created_at TEXT,
-      updated_at TEXT
-    )
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      username   TEXT UNIQUE NOT NULL,
+      password   TEXT NOT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP
+    );
   `);
 
     db.run(`
     CREATE TABLE IF NOT EXISTS issues (
-      id TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
+      id          TEXT PRIMARY KEY,
+      title       TEXT      NOT NULL,
       description TEXT,
-      status TEXT NOT NULL,
-      priority TEXT NOT NULL,
-      assignee TEXT,
-      creator TEXT,
-      created_at TEXT,
-      updated_at TEXT
-    )
+      status      TEXT      NOT NULL CHECK (status IN ('open','in_progress','resolved','closed')),
+      priority    TEXT      NOT NULL CHECK (priority IN ('low','medium','high','critical')),
+      assignee    TEXT,
+      creator     TEXT      NOT NULL,
+      created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at  TIMESTAMP
+    );
   `);
 
     db.run(`
     CREATE TABLE IF NOT EXISTS labels (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      color TEXT NOT NULL,
+      id          TEXT PRIMARY KEY,
+      name        TEXT NOT NULL,
+      color       TEXT NOT NULL CHECK (color GLOB '^#[0-9A-Fa-f]{6}$'),
       description TEXT
-    )
+    );
   `);
 
     db.run(`
     CREATE TABLE IF NOT EXISTS comments (
-      id TEXT PRIMARY KEY,
-      issue_id TEXT NOT NULL,
-      content TEXT NOT NULL,
-      author TEXT NOT NULL,
-      created_at TEXT,
-      updated_at TEXT
-    )
+      id         TEXT PRIMARY KEY,
+      issue_id   TEXT NOT NULL,
+      content    TEXT NOT NULL,
+      author     TEXT NOT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP
+    );
   `);
 
     db.run(`
     CREATE TABLE IF NOT EXISTS milestones (
-      id TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
+      id          TEXT PRIMARY KEY,
+      title       TEXT NOT NULL,
       description TEXT,
-      due_date TEXT,
-      status TEXT
-    )
+      due_date    TEXT,
+      status      TEXT NOT NULL CHECK (status IN ('open','closed'))
+    );
   `);
 });
 
@@ -142,8 +141,10 @@ app.post('/register', (req, res) => {
         .hash(password, 10)
         .then((hashedPassword) => {
             db.run(
-                `INSERT INTO users (username, password, created_at, updated_at)
-         VALUES (?, ?, ?, ?)`,
+                `
+        INSERT INTO users (username, password, created_at, updated_at)
+        VALUES (?, ?, ?, ?)
+        `,
                 [username, hashedPassword, now, now],
                 function (err) {
                     if (err) {
@@ -182,38 +183,47 @@ app.post('/login', (req, res) => {
             message: 'Username and password are required.'
         });
     }
-    db.get(`SELECT * FROM users WHERE username = ?`, [username], async (err, user) => {
-        if (err) {
-            return res.status(500).json({ code: 'DB_ERROR', message: err.message });
-        }
-        if (!user) {
-            return res.status(401).json({ code: 'INVALID_CREDENTIALS', message: 'Invalid username or password.' });
-        }
-        try {
-            const match = await bcrypt.compare(password, user.password);
-            if (!match) {
-                return res.status(401).json({
-                    code: 'INVALID_CREDENTIALS',
-                    message: 'Invalid username or password.'
-                });
+    db.get(
+        `SELECT * FROM users WHERE username = ?`,
+        [username],
+        async (err, user) => {
+            if (err) {
+                return res
+                    .status(500)
+                    .json({ code: 'DB_ERROR', message: err.message });
             }
-            // Successful login
-            req.session.user = { id: user.id, username: user.username };
-            res.json({
-                message: 'Logged in successfully!',
-                user: { id: user.id, username: user.username }
-            });
-        } catch (error) {
-            res.status(500).json({ code: 'HASH_ERROR', message: error.message });
+            if (!user) {
+                return res
+                    .status(401)
+                    .json({ code: 'INVALID_CREDENTIALS', message: 'Invalid username or password.' });
+            }
+            try {
+                const match = await bcrypt.compare(password, user.password);
+                if (!match) {
+                    return res
+                        .status(401)
+                        .json({ code: 'INVALID_CREDENTIALS', message: 'Invalid username or password.' });
+                }
+                // Successful login
+                req.session.user = { id: user.id, username: user.username };
+                res.json({
+                    message: 'Logged in successfully!',
+                    user: { id: user.id, username: user.username }
+                });
+            } catch (error) {
+                res.status(500).json({ code: 'HASH_ERROR', message: error.message });
+            }
         }
-    });
+    );
 });
 
 // Logout (DELETE /logout) => protected
 app.delete('/logout', checkAuth, (req, res) => {
     req.session.destroy((err) => {
         if (err) {
-            return res.status(500).json({ code: 'LOGOUT_ERROR', message: 'Logout failed.' });
+            return res
+                .status(500)
+                .json({ code: 'LOGOUT_ERROR', message: 'Logout failed.' });
         }
         res.clearCookie('connect.sid');
         res.json({ message: 'Logged out successfully!' });
@@ -234,7 +244,8 @@ app.get('/profile', checkAuth, (req, res) => {
 
 // GET /issues
 app.get('/issues', (req, res) => {
-    const { status, priority, label, milestone, page = '1', per_page = '20' } = req.query;
+    const { status, priority, label, milestone, page = '1', per_page = '20' } =
+        req.query;
     const pageNum = parseInt(page, 10) || 1;
     const limitNum = Math.min(parseInt(per_page, 10), 100);
     const offset = (pageNum - 1) * limitNum;
@@ -250,9 +261,12 @@ app.get('/issues', (req, res) => {
         conditions.push('priority = ?');
         params.push(priority);
     }
-    // ignoring label/milestone usage for naive approach
+    // ignoring label/milestone usage for a naive approach
 
-    const whereClause = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
+    const whereClause = conditions.length
+        ? 'WHERE ' + conditions.join(' AND ')
+        : '';
+
     const sql = `
     SELECT * FROM issues
     ${whereClause}
@@ -285,8 +299,10 @@ app.post('/issues', (req, res) => {
     const now = new Date().toISOString();
     const newId = uuidv4();
     db.run(
-        `INSERT INTO issues (id, title, description, status, priority, assignee, creator, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `
+    INSERT INTO issues (id, title, description, status, priority, assignee, creator, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
         [newId, title, description || '', status, priority, assignee || '', creator, now, now],
         function (err) {
             if (err) {
@@ -310,7 +326,9 @@ app.get('/issues/:issueId', (req, res) => {
             return res.status(500).json({ code: 'DB_ERROR', message: err.message });
         }
         if (!row) {
-            return res.status(404).json({ code: 'NOT_FOUND', message: 'Issue not found' });
+            return res
+                .status(404)
+                .json({ code: 'NOT_FOUND', message: 'Issue not found' });
         }
         res.json(row);
     });
@@ -348,7 +366,10 @@ app.patch('/issues/:issueId', (req, res) => {
     params.push(now);
 
     if (!fields.length) {
-        return res.status(400).json({ code: 'NO_UPDATE_FIELDS', message: 'No fields provided for update.' });
+        return res.status(400).json({
+            code: 'NO_UPDATE_FIELDS',
+            message: 'No fields provided for update.'
+        });
     }
 
     const sql = `UPDATE issues SET ${fields.join(', ')} WHERE id = ?`;
@@ -359,7 +380,9 @@ app.patch('/issues/:issueId', (req, res) => {
             return res.status(500).json({ code: 'DB_ERROR', message: err.message });
         }
         if (this.changes === 0) {
-            return res.status(404).json({ code: 'NOT_FOUND', message: 'Issue not found' });
+            return res
+                .status(404)
+                .json({ code: 'NOT_FOUND', message: 'Issue not found' });
         }
         db.get(`SELECT * FROM issues WHERE id = ?`, [issueId], (err2, row) => {
             if (err2) {
@@ -378,7 +401,9 @@ app.delete('/issues/:issueId', (req, res) => {
             return res.status(500).json({ code: 'DB_ERROR', message: err.message });
         }
         if (this.changes === 0) {
-            return res.status(404).json({ code: 'NOT_FOUND', message: 'Issue not found' });
+            return res
+                .status(404)
+                .json({ code: 'NOT_FOUND', message: 'Issue not found' });
         }
         res.status(204).send();
     });
@@ -409,16 +434,22 @@ app.post('/issues/:issueId/comments', (req, res) => {
     const now = new Date().toISOString();
     const newId = uuidv4();
     db.run(
-        `INSERT INTO comments (id, issue_id, content, author, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+        `
+    INSERT INTO comments (id, issue_id, content, author, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+    `,
         [newId, issueId, content, author, now, now],
         function (err) {
             if (err) {
-                return res.status(500).json({ code: 'DB_ERROR', message: err.message });
+                return res
+                    .status(500)
+                    .json({ code: 'DB_ERROR', message: err.message });
             }
             db.get(`SELECT * FROM comments WHERE id = ?`, [newId], (err2, row) => {
                 if (err2) {
-                    return res.status(500).json({ code: 'DB_ERROR', message: err2.message });
+                    return res
+                        .status(500)
+                        .json({ code: 'DB_ERROR', message: err2.message });
                 }
                 res.status(201).json(row);
             });
@@ -448,16 +479,22 @@ app.post('/labels', (req, res) => {
     }
     const newId = uuidv4();
     db.run(
-        `INSERT INTO labels (id, name, color, description)
-     VALUES (?, ?, ?, ?)`,
+        `
+    INSERT INTO labels (id, name, color, description)
+    VALUES (?, ?, ?, ?)
+    `,
         [newId, name, color, description || ''],
         function (err) {
             if (err) {
-                return res.status(500).json({ code: 'DB_ERROR', message: err.message });
+                return res
+                    .status(500)
+                    .json({ code: 'DB_ERROR', message: err.message });
             }
             db.get(`SELECT * FROM labels WHERE id = ?`, [newId], (err2, row) => {
                 if (err2) {
-                    return res.status(500).json({ code: 'DB_ERROR', message: err2.message });
+                    return res
+                        .status(500)
+                        .json({ code: 'DB_ERROR', message: err2.message });
                 }
                 res.status(201).json(row);
             });
@@ -494,8 +531,10 @@ app.post('/milestones', (req, res) => {
     }
     const newId = uuidv4();
     db.run(
-        `INSERT INTO milestones (id, title, description, due_date, status)
-     VALUES (?, ?, ?, ?, ?)`,
+        `
+    INSERT INTO milestones (id, title, description, due_date, status)
+    VALUES (?, ?, ?, ?, ?)
+    `,
         [newId, title, description, due_date, status],
         function (err) {
             if (err) {
@@ -503,7 +542,9 @@ app.post('/milestones', (req, res) => {
             }
             db.get(`SELECT * FROM milestones WHERE id = ?`, [newId], (err2, row) => {
                 if (err2) {
-                    return res.status(500).json({ code: 'DB_ERROR', message: err2.message });
+                    return res
+                        .status(500)
+                        .json({ code: 'DB_ERROR', message: err2.message });
                 }
                 res.status(201).json(row);
             });
@@ -518,6 +559,10 @@ app.use((req, res) => {
 
 // Central Error Handler
 app.use((err, req, res, _unusedNext) => {
+    err.status = undefined;
+    err.code = undefined;
+    err.message = undefined;
+    err.details = undefined;
     console.error(err);
     res.status(err.status || 500).json({
         code: err.code || 'INTERNAL_SERVER_ERROR',
