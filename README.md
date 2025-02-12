@@ -15,27 +15,20 @@ OpenAPI 3.0)**.
 
 ## 🚀 Getting Started
 
-### 1️⃣ Prerequisites
+### Prerequisites
 
 Ensure you have the following installed:
 
 - **Node.js** (>=14)
 - **npm** (Node Package Manager)
 
-### 2️⃣ Clone the Repository
-
-```bash
-git clone https://github.com/your-username/mantis-clone-api.git
-cd mantis-clone-api
-```
-
-### 3️⃣ Install Dependencies
+### Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 4️⃣ Create an `.env` File
+### Create an `.env` File
 
 Create a `.env` file in the project root and add the following:
 
@@ -45,7 +38,7 @@ SESSION_SECRET=your_secret_key
 JWT_SECRET=your_jwt_secret
 ```
 
-### 5️⃣ Run the Server
+### Run the Server
 
 ```bash
 npm start
@@ -126,104 +119,12 @@ curl -X GET http://localhost:3000/profile -b cookies.txt
 curl -X POST http://localhost:3000/logout -b cookies.txt
 ```
 
----
-
-## 📝 API Endpoints
-
-### 🔐 Auth Routes
-
-| Method | Endpoint  | Description         |
-|--------|-----------|---------------------|
-| POST   | /register | Register a new user |
-
-### 🔐 Session Routes
-
-| Method | Endpoint | Description                |
-|--------|----------|----------------------------|
-| POST   | /login   | Log in a user              |
-| DELETE | /logout  | Log out user               |
-| GET    | /profile | Get logged-in user details |
-
-### 📌 Issue Routes
-
-| Method | Endpoint     | Description        |
-|--------|--------------|--------------------|
-| GET    | /issues      | Get all issues     |
-| POST   | /issues      | Create a new issue |
-| GET    | /issues/{id} | Get issue details  |
-| PATCH  | /issues/{id} | Update an issue    |
-| DELETE | /issues/{id} | Delete an issue    |
-
-### 🏷 Label Routes
-
-| Method | Endpoint | Description        |
-|--------|----------|--------------------|
-| GET    | /labels  | Get all labels     |
-| POST   | /labels  | Create a new label |
-
-### 💬 Comment Routes
-
-| Method | Endpoint              | Description               |
-|--------|-----------------------|---------------------------|
-| GET    | /issues/{id}/comments | Get comments for an issue |
-| POST   | /issues/{id}/comments | Add a comment to an issue |
-
-### 🎯 Milestone Routes
-
-| Method | Endpoint    | Description            |
-|--------|-------------|------------------------|
-| GET    | /milestones | Get all milestones     |
-| POST   | /milestones | Create a new milestone |
-
----
-
-## ❌ Error Handling
-
-All errors follow this structure:
-
-```json
-{
-  "code": "ERROR_CODE",
-  "message": "Error description",
-  "details": {}
-}
-```
-
-Common error responses:
-| HTTP Code | Meaning |
-|-----------|---------|
-| 400 | Bad Request |
-| 401 | Unauthorized |
-| 403 | Forbidden |
-| 404 | Not Found |
-| 500 | Internal Server Error |
-
----
-
 ## 📌 Development Notes
 
 - **Database**: Uses **SQLite**.
 - **Sessions**: Uses `express-session` with `connect-sqlite3`.
 - **Password Hashing**: Uses `bcrypt` for secure password storage.
 - **Documentation**: Uses **Swagger UI** for API reference.
-
----
-
-## 🎯 Future Enhancements
-
-- Add **email verification** for new users.
-- Implement **role-based access control** (RBAC).
-- Add support for **OAuth login** (Google, GitHub, etc.).
-
----
-
-## 👨‍💻 Contributing
-
-1. Fork the repository.
-2. Create a feature branch: `git checkout -b feature-name`.
-3. Commit changes: `git commit -m 'Add new feature'`.
-4. Push to the branch: `git push origin feature-name`.
-5. Submit a pull request!
 
 ---
 
