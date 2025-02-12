@@ -15,20 +15,27 @@ OpenAPI 3.0)**.
 
 ## 🚀 Getting Started
 
-### Prerequisites
+### 1️⃣ Prerequisites
 
 Ensure you have the following installed:
 
 - **Node.js** (>=14)
 - **npm** (Node Package Manager)
 
-### Install Dependencies
+### 2️⃣ Clone the Repository
+
+```bash
+git clone https://github.com/your-username/mantis-clone-api.git
+cd mantis-clone-api
+```
+
+### 3️⃣ Install Dependencies
 
 ```bash
 npm install
 ```
 
-### Create an `.env` File
+### 4️⃣ Create an `.env` File
 
 Create a `.env` file in the project root and add the following:
 
@@ -38,7 +45,7 @@ SESSION_SECRET=your_secret_key
 JWT_SECRET=your_jwt_secret
 ```
 
-### Run the Server
+### 5️⃣ Run the Server
 
 ```bash
 npm start
@@ -207,6 +214,16 @@ Common error responses:
 - Add **email verification** for new users.
 - Implement **role-based access control** (RBAC).
 - Add support for **OAuth login** (Google, GitHub, etc.).
+
+---
+
+## 👨‍💻 Contributing
+
+1. Fork the repository.
+2. Create a feature branch: `git checkout -b feature-name`.
+3. Commit changes: `git commit -m 'Add new feature'`.
+4. Push to the branch: `git push origin feature-name`.
+5. Submit a pull request!
 
 ---
 

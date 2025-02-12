@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js"
+    "start": "nodemon -e yaml,json,js  app.js",
+    "dev": "nodemon -e yaml,json,js  app.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
