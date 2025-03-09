@@ -9,6 +9,8 @@ const sqlite3 = require('sqlite3').verbose();
 const { v4: uuidv4 } = require('uuid');
 const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
+// FIX: Add rate limiter for brute force protection
+const rateLimit = require('express-rate-limit');
 
 // Load Swagger document
 const swaggerDocument = YAML.load('./api.yaml');
@@ -18,6 +20,18 @@ const port = process.env.PORT || 3000;
 
 // Parse JSON bodies
 app.use(express.json());
+
+// FIX: Create rate limiter for authentication routes
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // 5 attempts per window per IP
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        code: 'TOO_MANY_REQUESTS',
+        message: 'Too many login attempts, please try again after 15 minutes'
+    }
+});
 
 // --------------------------
 // Session Middleware
@@ -136,7 +150,8 @@ app.get('/', (req, res) => {
 });
 
 // Register (POST /register)
-app.post('/register', (req, res) => {
+// FIX: Add rate limiting for authentication endpoints
+app.post('/register', authLimiter, (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) {
         return res.status(400).json({
@@ -175,7 +190,7 @@ app.post('/register', (req, res) => {
             );
         })
         .catch((error) => {
-            // FIX: Don't expose bcrypt error messages to clients
+            // Don't expose bcrypt error messages to clients
             console.error('Password hashing error:', error.message);
             res.status(500).json({
                 code: 'INTERNAL_SERVER_ERROR',
@@ -185,7 +200,8 @@ app.post('/register', (req, res) => {
 });
 
 // Login (POST /login)
-app.post('/login', (req, res) => {
+// FIX: Add rate limiting for authentication endpoints
+app.post('/login', authLimiter, (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) {
         return res.status(400).json({
@@ -221,7 +237,7 @@ app.post('/login', (req, res) => {
                     user: { id: user.id, username: user.username }
                 });
             } catch (error) {
-                // FIX: Don't expose bcrypt error messages to clients
+                // Don't expose bcrypt error messages to clients
                 console.error('Password comparison error:', error.message);
                 res.status(500).json({ 
                     code: 'INTERNAL_SERVER_ERROR', 
