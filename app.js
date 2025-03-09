@@ -27,9 +27,9 @@ app.use(
         store: new SQLiteStore({ 
             db: 'sessions.sqlite', 
             dir: '.',
-            // FIX: Add clearExpired option to automatically clean up expired sessions
+            // Add clearExpired option to automatically clean up expired sessions
             clearExpired: true,
-            // FIX: Check for expired sessions every hour (in milliseconds)
+            // Check for expired sessions every hour (in milliseconds)
             checkExpirationInterval: 60 * 60 * 1000
         }),
         secret: process.env.SESSION_SECRET || 'fallback_secret',
@@ -175,9 +175,11 @@ app.post('/register', (req, res) => {
             );
         })
         .catch((error) => {
+            // FIX: Don't expose bcrypt error messages to clients
+            console.error('Password hashing error:', error.message);
             res.status(500).json({
-                code: 'HASH_ERROR',
-                message: error.message
+                code: 'INTERNAL_SERVER_ERROR',
+                message: 'An error occurred during registration. Please try again.'
             });
         });
 });
@@ -219,7 +221,12 @@ app.post('/login', (req, res) => {
                     user: { id: user.id, username: user.username }
                 });
             } catch (error) {
-                res.status(500).json({ code: 'HASH_ERROR', message: error.message });
+                // FIX: Don't expose bcrypt error messages to clients
+                console.error('Password comparison error:', error.message);
+                res.status(500).json({ 
+                    code: 'INTERNAL_SERVER_ERROR', 
+                    message: 'An error occurred during login. Please try again.' 
+                });
             }
         }
     );
@@ -296,7 +303,8 @@ app.get('/issues', (req, res) => {
 });
 
 // POST /issues
-app.post('/issues', (req, res) => {
+// FIX: Add checkAuth to protect data-modifying endpoints
+app.post('/issues', checkAuth, (req, res) => {
     const { title, description, status, priority, assignee, creator } = req.body;
     if (!title || !status || !priority || !creator) {
         return res.status(400).json({
@@ -343,7 +351,8 @@ app.get('/issues/:issueId', (req, res) => {
 });
 
 // PATCH /issues/:issueId
-app.patch('/issues/:issueId', (req, res) => {
+// FIX: Add checkAuth to protect data-modifying endpoints
+app.patch('/issues/:issueId', checkAuth, (req, res) => {
     const { issueId } = req.params;
     const now = new Date().toISOString();
     const fields = [];
@@ -402,7 +411,8 @@ app.patch('/issues/:issueId', (req, res) => {
 });
 
 // DELETE /issues/:issueId
-app.delete('/issues/:issueId', (req, res) => {
+// FIX: Add checkAuth to protect data-modifying endpoints
+app.delete('/issues/:issueId', checkAuth, (req, res) => {
     const { issueId } = req.params;
     db.run(`DELETE FROM issues WHERE id = ?`, [issueId], function (err) {
         if (err) {
@@ -430,7 +440,8 @@ app.get('/issues/:issueId/comments', (req, res) => {
 });
 
 // POST /issues/:issueId/comments
-app.post('/issues/:issueId/comments', (req, res) => {
+// FIX: Add checkAuth to protect data-modifying endpoints
+app.post('/issues/:issueId/comments', checkAuth, (req, res) => {
     const { issueId } = req.params;
     const { content, author } = req.body;
     if (!content || !author) {
@@ -491,7 +502,8 @@ app.get('/labels', (req, res) => {
 });
 
 // POST /labels
-app.post('/labels', (req, res) => {
+// FIX: Add checkAuth to protect data-modifying endpoints
+app.post('/labels', checkAuth, (req, res) => {
     const { name, color, description } = req.body;
     if (!name || !color) {
         return res.status(400).json({
@@ -543,7 +555,8 @@ app.get('/milestones', (req, res) => {
 });
 
 // POST /milestones
-app.post('/milestones', (req, res) => {
+// FIX: Add checkAuth to protect data-modifying endpoints
+app.post('/milestones', checkAuth, (req, res) => {
     const { title, description, due_date, status } = req.body;
     if (!title || !description || !due_date || !status) {
         return res.status(400).json({
@@ -580,11 +593,8 @@ app.use((req, res) => {
 });
 
 // Central Error Handler
+// FIX: Don't overwrite error properties but provide defaults if missing
 app.use((err, req, res, _unusedNext) => {
-    err.status = undefined;
-    err.code = undefined;
-    err.message = undefined;
-    err.details = undefined;
     console.error(err);
     res.status(err.status || 500).json({
         code: err.code || 'INTERNAL_SERVER_ERROR',
