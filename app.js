@@ -24,7 +24,14 @@ app.use(express.json());
 // --------------------------
 app.use(
     session({
-        store: new SQLiteStore({ db: 'sessions.sqlite', dir: '.' }),
+        store: new SQLiteStore({ 
+            db: 'sessions.sqlite', 
+            dir: '.',
+            // FIX: Add clearExpired option to automatically clean up expired sessions
+            clearExpired: true,
+            // FIX: Check for expired sessions every hour (in milliseconds)
+            checkExpirationInterval: 60 * 60 * 1000
+        }),
         secret: process.env.SESSION_SECRET || 'fallback_secret',
         resave: false,
         saveUninitialized: false,
