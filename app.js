@@ -9,6 +9,8 @@ const sqlite3 = require('sqlite3').verbose();
 const { v4: uuidv4 } = require('uuid');
 const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
+// FIX: Add rate limiter for brute force protection
+const rateLimit = require('express-rate-limit');
 
 // Load Swagger document
 const swaggerDocument = YAML.load('./api.yaml');
@@ -19,12 +21,31 @@ const port = process.env.PORT || 3002;
 // Parse JSON bodies
 app.use(express.json());
 
+// FIX: Create rate limiter for authentication routes
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // 5 attempts per window per IP
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        code: 'TOO_MANY_REQUESTS',
+        message: 'Too many login attempts, please try again after 15 minutes'
+    }
+});
+
 // --------------------------
 // Session Middleware
 // --------------------------
 app.use(
     session({
-        store: new SQLiteStore({ db: 'sessions.sqlite', dir: '.' }),
+        store: new SQLiteStore({ 
+            db: 'sessions.sqlite', 
+            dir: '.',
+            // Add clearExpired option to automatically clean up expired sessions
+            clearExpired: true,
+            // Check for expired sessions every hour (in milliseconds)
+            checkExpirationInterval: 60 * 60 * 1000
+        }),
         secret: process.env.SESSION_SECRET || 'fallback_secret',
         resave: false,
         saveUninitialized: false,
@@ -129,7 +150,8 @@ app.get('/', (req, res) => {
 });
 
 // Register (POST /register)
-app.post('/register', (req, res) => {
+// FIX: Add rate limiting for authentication endpoints
+app.post('/register', authLimiter, (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) {
         return res.status(400).json({
@@ -168,15 +190,18 @@ app.post('/register', (req, res) => {
             );
         })
         .catch((error) => {
+            // Don't expose bcrypt error messages to clients
+            console.error('Password hashing error:', error.message);
             res.status(500).json({
-                code: 'HASH_ERROR',
-                message: error.message
+                code: 'INTERNAL_SERVER_ERROR',
+                message: 'An error occurred during registration. Please try again.'
             });
         });
 });
 
 // Login (POST /login)
-app.post('/login', (req, res) => {
+// FIX: Add rate limiting for authentication endpoints
+app.post('/login', authLimiter, (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) {
         return res.status(400).json({
@@ -212,7 +237,12 @@ app.post('/login', (req, res) => {
                     user: { id: user.id, username: user.username }
                 });
             } catch (error) {
-                res.status(500).json({ code: 'HASH_ERROR', message: error.message });
+                // Don't expose bcrypt error messages to clients
+                console.error('Password comparison error:', error.message);
+                res.status(500).json({ 
+                    code: 'INTERNAL_SERVER_ERROR', 
+                    message: 'An error occurred during login. Please try again.' 
+                });
             }
         }
     );
@@ -289,7 +319,8 @@ app.get('/issues', (req, res) => {
 });
 
 // POST /issues
-app.post('/issues', (req, res) => {
+// FIX: Add checkAuth to protect data-modifying endpoints
+app.post('/issues', checkAuth, (req, res) => {
     const { title, description, status, priority, assignee, creator } = req.body;
     if (!title || !status || !priority || !creator) {
         return res.status(400).json({
@@ -336,7 +367,8 @@ app.get('/issues/:issueId', (req, res) => {
 });
 
 // PATCH /issues/:issueId
-app.patch('/issues/:issueId', (req, res) => {
+// FIX: Add checkAuth to protect data-modifying endpoints
+app.patch('/issues/:issueId', checkAuth, (req, res) => {
     const { issueId } = req.params;
     const now = new Date().toISOString();
     const fields = [];
@@ -395,7 +427,8 @@ app.patch('/issues/:issueId', (req, res) => {
 });
 
 // DELETE /issues/:issueId
-app.delete('/issues/:issueId', (req, res) => {
+// FIX: Add checkAuth to protect data-modifying endpoints
+app.delete('/issues/:issueId', checkAuth, (req, res) => {
     const { issueId } = req.params;
     db.run(`DELETE FROM issues WHERE id = ?`, [issueId], function (err) {
         if (err) {
@@ -423,7 +456,8 @@ app.get('/issues/:issueId/comments', (req, res) => {
 });
 
 // POST /issues/:issueId/comments
-app.post('/issues/:issueId/comments', (req, res) => {
+// FIX: Add checkAuth to protect data-modifying endpoints
+app.post('/issues/:issueId/comments', checkAuth, (req, res) => {
     const { issueId } = req.params;
     const { content, author } = req.body;
     if (!content || !author) {
@@ -484,7 +518,8 @@ app.get('/labels', (req, res) => {
 });
 
 // POST /labels
-app.post('/labels', (req, res) => {
+// FIX: Add checkAuth to protect data-modifying endpoints
+app.post('/labels', checkAuth, (req, res) => {
     const { name, color, description } = req.body;
     if (!name || !color) {
         return res.status(400).json({
@@ -536,7 +571,8 @@ app.get('/milestones', (req, res) => {
 });
 
 // POST /milestones
-app.post('/milestones', (req, res) => {
+// FIX: Add checkAuth to protect data-modifying endpoints
+app.post('/milestones', checkAuth, (req, res) => {
     const { title, description, due_date, status } = req.body;
     if (!title || !description || !due_date || !status) {
         return res.status(400).json({
@@ -573,11 +609,8 @@ app.use((req, res) => {
 });
 
 // Central Error Handler
+// FIX: Don't overwrite error properties but provide defaults if missing
 app.use((err, req, res, _unusedNext) => {
-    err.status = undefined;
-    err.code = undefined;
-    err.message = undefined;
-    err.details = undefined;
     console.error(err);
     res.status(err.status || 500).json({
         code: err.code || 'INTERNAL_SERVER_ERROR',
