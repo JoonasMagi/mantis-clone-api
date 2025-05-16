@@ -78,6 +78,25 @@
             margin-right: 10px;
             vertical-align: middle;
         }
+        .frontend-section {
+            background-color: #f0f7ff;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .frontend-link {
+            background-color: #1e40af;
+            color: white;
+            padding: 12px 24px;
+            font-size: 18px;
+            border-radius: 5px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        .frontend-link:hover {
+            background-color: #1e3a8a;
+        }
     </style>
 </head>
 <body>
@@ -96,6 +115,13 @@
             <h2>About this API</h2>
             <p>This API provides access to the Mantis Clone application's backend services. The documentation is available in multiple languages.</p>
             <p>Select your preferred documentation language from the links above.</p>
+        </div>
+
+        <div class="frontend-section">
+            <h2>Try the Frontend</h2>
+            <p>Check out our newly created React frontend for the Mantis Clone API. The frontend provides a user-friendly interface for managing issues, labels, milestones, and comments.</p>
+            <a href="/web/" class="frontend-link">Go to Mantis Clone Frontend</a>
+            <p class="mt-2 text-sm">The frontend is served from the same server at the /web/ path.</p>
         </div>
     </div>
 </body>

@@ -128,6 +128,14 @@ db.serialize(() => {
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // --------------------------
+// Serve Frontend
+// --------------------------
+app.use('/web', express.static('web'));
+app.get('/web/*', (req, res) => {
+  res.sendFile('index.html', { root: 'web' });
+});
+
+// --------------------------
 // Helper: checkAuth for protected routes
 // --------------------------
 function checkAuth(req, res, _next) {
@@ -620,7 +628,9 @@ app.use((err, req, res, _unusedNext) => {
 });
 
 // Start the Server
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-    console.log(`Swagger docs available at http://localhost:${port}/api-docs`);
+const serverPort = 5555; // New port for our application
+app.listen(serverPort, () => {
+    console.log(`Server is running on port ${serverPort}`);
+    console.log(`Swagger docs available at http://localhost:${serverPort}/api-docs`);
+    console.log(`Frontend available at http://localhost:${serverPort}/web/`);
 });
