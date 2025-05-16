@@ -14,7 +14,7 @@ const YAML = require('yamljs');
 const swaggerDocument = YAML.load('./api.yaml');
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3002;
 
 // Parse JSON bodies
 app.use(express.json());

@@ -1,0 +1,1154 @@
+openapi: 3.0.3
+info:
+  title: Mantis Clone API
+  description: A basic issue tracker API with support for issues, labels, comments, and milestones
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@mantisclone.com
+
+tags:
+  - name: Issues
+    description: Operations related to issues
+  - name: Labels
+    description: Operations related to labels
+  - name: Comments
+    description: Operations related to comments
+  - name: Milestones
+    description: Operations related to milestones
+  - name: Users
+    description: Operations related to user registration
+  - name: Sessions
+    description: Operations related to user session management (login, logout, profile)
+  - name: Wildcard
+    description: Fallback route for undefined paths
+
+servers:
+  - url: /
+    description: Production server
+  - url: /
+    description: Staging server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ###############################
+    # Generic Error Schema
+    ###############################
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Error code
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+      required:
+        - code
+        - message
+
+    ###############################
+    # Issue Schemas
+    ###############################
+    CreateIssue:
+      type: object
+      description: Schema for creating a new issue (POST)
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        status:
+          type: string
+          enum: [open, in_progress, resolved, closed]
+        priority:
+          type: string
+          enum: [low, medium, high, critical]
+        assignee:
+          type: string
+          format: uuid
+        creator:
+          type: string
+          format: uuid
+        labels:
+          type: array
+          items:
+            $ref: '#/components/schemas/GetLabel'
+        milestone:
+          $ref: '#/components/schemas/GetMilestone'
+      required:
+        - title
+        - status
+        - priority
+        - creator
+
+    UpdateIssue:
+      type: object
+      description: Schema for updating an existing issue (PATCH)
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        status:
+          type: string
+          enum: [open, in_progress, resolved, closed]
+        priority:
+          type: string
+          enum: [low, medium, high, critical]
+        assignee:
+          type: string
+          format: uuid
+        labels:
+          type: array
+          items:
+            $ref: '#/components/schemas/GetLabel'
+        milestone:
+          $ref: '#/components/schemas/GetMilestone'
+      # no required fields
+
+    GetIssue:
+      type: object
+      description: Schema for retrieving an issue (GET)
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        status:
+          type: string
+          enum: [open, in_progress, resolved, closed]
+        priority:
+          type: string
+          enum: [low, medium, high, critical]
+        assignee:
+          type: string
+          format: uuid
+        creator:
+          type: string
+          format: uuid
+        labels:
+          type: array
+          items:
+            $ref: '#/components/schemas/GetLabel'
+        milestone:
+          $ref: '#/components/schemas/GetMilestone'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ###############################
+    # Label Schemas
+    ###############################
+    CreateLabel:
+      type: object
+      description: Schema for creating a new label (POST)
+      properties:
+        name:
+          type: string
+          maxLength: 50
+        color:
+          type: string
+          pattern: '^#[0-9a-fA-F]{6}$'
+        description:
+          type: string
+          maxLength: 200
+      required:
+        - name
+        - color
+
+    UpdateLabel:
+      type: object
+      description: Schema for partial updating a label (PATCH)
+      properties:
+        name:
+          type: string
+          maxLength: 50
+        color:
+          type: string
+          pattern: '^#[0-9a-fA-F]{6}$'
+        description:
+          type: string
+          maxLength: 200
+      # no required fields => partial
+
+    GetLabel:
+      type: object
+      description: Schema for retrieving an existing label
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 50
+        color:
+          type: string
+          pattern: '^#[0-9a-fA-F]{6}$'
+        description:
+          type: string
+          maxLength: 200
+
+    ###############################
+    # Comment Schemas
+    ###############################
+    CreateComment:
+      type: object
+      description: Schema for creating a new comment (POST)
+      properties:
+        issue_id:
+          type: string
+          format: uuid
+        content:
+          type: string
+        author:
+          type: string
+          format: uuid
+      required:
+        - issue_id
+        - content
+        - author
+
+    UpdateComment:
+      type: object
+      description: Schema for partial updating a comment (PATCH)
+      properties:
+        content:
+          type: string
+        author:
+          type: string
+          format: uuid
+      # no required fields => partial
+
+    GetComment:
+      type: object
+      description: Schema for retrieving an existing comment
+      properties:
+        id:
+          type: string
+          format: uuid
+        issue_id:
+          type: string
+          format: uuid
+        content:
+          type: string
+        author:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ###############################
+    # Milestone Schemas
+    ###############################
+    CreateMilestone:
+      type: object
+      description: Schema for creating a new milestone (POST)
+      properties:
+        title:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+        due_date:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [open, closed]
+      required:
+        - title
+        - due_date
+        - status
+        - description
+
+    UpdateMilestone:
+      type: object
+      description: Schema for partial updating a milestone (PATCH)
+      properties:
+        title:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+        due_date:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [open, closed]
+      # no required fields => partial
+
+    GetMilestone:
+      type: object
+      description: Schema for retrieving an existing milestone
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+        due_date:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [open, closed]
+
+    ###############################
+    # User / Auth Schemas
+    ###############################
+    RegisterUser:
+      type: object
+      description: Schema for user registration (POST /register)
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required:
+        - username
+        - password
+
+    LoginUser:
+      type: object
+      description: Schema for user login (POST /login)
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required:
+        - username
+        - password
+
+    GetUser:
+      type: object
+      description: Schema for retrieving user profile data
+      properties:
+        id:
+          type: integer
+          description: Auto-incremented user ID
+        username:
+          type: string
+          description: Unique username
+
+paths:
+  #######################
+  # Auth Routes (Registration)
+  #######################
+  /register:
+    post:
+      tags:
+        - Users
+      summary: Register a new user
+      description: Creates a new user with a username and password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterUser'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user_id:
+                    type: integer
+        '400':
+          description: Invalid input (e.g., missing username or password)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Username already taken
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  #######################
+  # Session Routes (Login, Logout, Profile)
+  #######################
+  /login:
+    post:
+      tags:
+        - Sessions
+      summary: Log in a user
+      description: Authenticates a user by username and password, then creates a session.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginUser'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/GetUser'
+        '400':
+          description: Invalid input (missing username or password)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Invalid username or password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /logout:
+    delete:
+      tags:
+        - Sessions
+      summary: Log out the current user
+      description: Destroys the current session.
+      responses:
+        '200':
+          description: Successfully logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '401':
+          description: User is not logged in
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /profile:
+    get:
+      tags:
+        - Sessions
+      summary: Get the logged-in user’s profile
+      description: Returns the user data from the current session.
+      responses:
+        '200':
+          description: Returns user profile data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/GetUser'
+        '401':
+          description: User is not logged in (no valid session)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  #######################
+  # Issues
+  #######################
+  /issues:
+    get:
+      tags:
+        - Issues
+      summary: List all issues
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, in_progress, resolved, closed]
+        - name: priority
+          in: query
+          schema:
+            type: string
+            enum: [low, medium, high, critical]
+        - name: label
+          in: query
+          schema:
+            type: string
+        - name: milestone
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: List of issues
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GetIssue'
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      page:
+                        type: integer
+                      per_page:
+                        type: integer
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - Issues
+      summary: Create a new issue
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIssue'
+      responses:
+        '201':
+          description: Issue created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetIssue'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /issues/{issueId}:
+    parameters:
+      - name: issueId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags:
+        - Issues
+      summary: Get issue details
+      responses:
+        '200':
+          description: Issue details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetIssue'
+        '404':
+          description: Issue not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    patch:
+      security:
+        - bearerAuth: []
+      tags:
+        - Issues
+      summary: Update an issue
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateIssue'
+      responses:
+        '200':
+          description: Issue updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetIssue'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Issue not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      security:
+        - bearerAuth: []
+      tags:
+        - Issues
+      summary: Delete an issue
+      responses:
+        '204':
+          description: Issue deleted successfully
+        '404':
+          description: Issue not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /issues/{issueId}/comments:
+    parameters:
+      - name: issueId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags:
+        - Comments
+      summary: List comments for an issue
+      responses:
+        '200':
+          description: List of comments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GetComment'
+        '404':
+          description: Issue not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - Comments
+      summary: Add a comment to an issue
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateComment'
+      responses:
+        '201':
+          description: Comment added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetComment'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Issue not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  #######################
+  # Comments: separate path for patch/delete
+  #######################
+  /comments/{commentId}:
+    parameters:
+      - name: commentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      security:
+        - bearerAuth: []
+      tags:
+        - Comments
+      summary: Update a comment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateComment'
+      responses:
+        '200':
+          description: Comment updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetComment'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Comment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      security:
+        - bearerAuth: []
+      tags:
+        - Comments
+      summary: Delete a comment
+      responses:
+        '204':
+          description: Comment deleted successfully
+        '404':
+          description: Comment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  #######################
+  # Labels
+  #######################
+  /labels:
+    get:
+      tags:
+        - Labels
+      summary: List all labels
+      responses:
+        '200':
+          description: List of labels
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GetLabel'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - Labels
+      summary: Create a new label
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLabel'
+      responses:
+        '201':
+          description: Label created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetLabel'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /labels/{labelId}:
+    parameters:
+      - name: labelId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      security:
+        - bearerAuth: []
+      tags:
+        - Labels
+      summary: Update an existing label
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLabel'
+      responses:
+        '200':
+          description: Label updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetLabel'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Label not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      security:
+        - bearerAuth: []
+      tags:
+        - Labels
+      summary: Delete a label
+      responses:
+        '204':
+          description: Label deleted successfully
+        '404':
+          description: Label not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  #######################
+  # Milestones
+  #######################
+  /milestones:
+    get:
+      tags:
+        - Milestones
+      summary: List all milestones
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, closed]
+      responses:
+        '200':
+          description: List of milestones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GetMilestone'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - Milestones
+      summary: Create a new milestone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMilestone'
+      responses:
+        '201':
+          description: Milestone created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetMilestone'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /milestones/{milestoneId}:
+    parameters:
+      - name: milestoneId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      security:
+        - bearerAuth: []
+      tags:
+        - Milestones
+      summary: Update an existing milestone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMilestone'
+      responses:
+        '200':
+          description: Milestone updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetMilestone'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Milestone not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      security:
+        - bearerAuth: []
+      tags:
+        - Milestones
+      summary: Delete a milestone
+      responses:
+        '204':
+          description: Milestone deleted successfully
+        '404':
+          description: Milestone not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  #######################
+  # Fallback route
+  #######################
+  '/{Wildcard*}':
+    get:
+      tags:
+        - Wildcard
+      summary: Fallback for undefined routes
+      description: Returns a 404 error for any route that isn't explicitly defined.
+      parameters:
+        - name: wildcard
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '404':
+          description: This route always returns Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+security:
+  - bearerAuth: []
