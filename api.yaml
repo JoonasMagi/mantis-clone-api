@@ -17,9 +17,9 @@ tags:
   - name: Milestones
     description: Operations related to milestones
   - name: Users
-    description: Operations related to user registration
+    description: Operations related to users (registration, profile)
   - name: Sessions
-    description: Operations related to user session management (login, logout, profile)
+    description: Operations related to user sessions (login, logout)
   - name: Wildcard
     description: Fallback route for undefined paths
 
@@ -321,11 +321,11 @@ components:
           enum: [open, closed]
 
     ###############################
-    # User / Auth Schemas
+    # User and Session Schemas
     ###############################
     RegisterUser:
       type: object
-      description: Schema for user registration (POST /register)
+      description: Schema for creating a new user (POST /users)
       properties:
         username:
           type: string
@@ -337,7 +337,7 @@ components:
 
     LoginUser:
       type: object
-      description: Schema for user login (POST /login)
+      description: Schema for creating a user session (POST /sessions)
       properties:
         username:
           type: string
@@ -349,7 +349,7 @@ components:
 
     GetUser:
       type: object
-      description: Schema for retrieving user profile data
+      description: Schema for retrieving current user data (GET /users/me)
       properties:
         id:
           type: integer
@@ -360,13 +360,13 @@ components:
 
 paths:
   #######################
-  # Auth Routes (Registration)
+  # User Resources
   #######################
-  /register:
+  /users:
     post:
       tags:
         - Users
-      summary: Register a new user
+      summary: Create a new user
       description: Creates a new user with a username and password.
       requestBody:
         required: true
@@ -376,7 +376,7 @@ paths:
               $ref: '#/components/schemas/RegisterUser'
       responses:
         '201':
-          description: User registered successfully
+          description: User created successfully
           content:
             application/json:
               schema:
@@ -406,13 +406,13 @@ paths:
                 $ref: '#/components/schemas/Error'
 
   #######################
-  # Session Routes (Login, Logout, Profile)
+  # Session Resources
   #######################
-  /login:
+  /sessions:
     post:
       tags:
         - Sessions
-      summary: Log in a user
+      summary: Create a new session (login)
       description: Authenticates a user by username and password, then creates a session.
       requestBody:
         required: true
@@ -421,8 +421,8 @@ paths:
             schema:
               $ref: '#/components/schemas/LoginUser'
       responses:
-        '200':
-          description: Login successful
+        '201':
+          description: Session created successfully
           content:
             application/json:
               schema:
@@ -451,22 +451,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /logout:
+  /sessions/current:
     delete:
       tags:
         - Sessions
-      summary: Log out the current user
+      summary: Delete the current session (logout)
       description: Destroys the current session.
       responses:
-        '200':
-          description: Successfully logged out
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
+        '204':
+          description: Session deleted successfully (no content)
         '401':
           description: User is not logged in
           content:
@@ -480,10 +473,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /profile:
+  /users/me:
     get:
       tags:
-        - Sessions
+        - Users
       summary: Get the logged-in user’s profile
       description: Returns the user data from the current session.
       responses:

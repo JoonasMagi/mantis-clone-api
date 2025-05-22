@@ -46,7 +46,7 @@ app.use(
             // Check for expired sessions every hour (in milliseconds)
             checkExpirationInterval: 60 * 60 * 1000
         }),
-        secret: process.env.SESSION_SECRET || 'fallback_secret',
+        secret: process.env.SESSION_SECRET || 'replace_with_session_secret',
         resave: false,
         saveUninitialized: false,
         cookie: {
@@ -128,12 +128,31 @@ db.serialize(() => {
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // --------------------------
-// Serve Frontend
+// API Routes
 // --------------------------
-app.use('/web', express.static('web'));
-app.get('/web/*', (req, res) => {
-  res.sendFile('index.html', { root: 'web' });
-});
+// Adding documentation routes to match implementation
+app.use('/api-docs/auth', express.Router()
+  .post('/users', authLimiter, (req, res) => {
+    // Forward to original handler
+    req.url = '/users';
+    app._router.handle(req, res);
+  })
+  .post('/sessions', authLimiter, (req, res) => {
+    // Forward to original handler
+    req.url = '/sessions';
+    app._router.handle(req, res);
+  })
+  .delete('/sessions/current', checkAuth, (req, res) => {
+    // Forward to original handler
+    req.url = '/sessions/current';
+    app._router.handle(req, res);
+  })
+  .get('/users/me', checkAuth, (req, res) => {
+    // Forward to original handler
+    req.url = '/users/me';
+    app._router.handle(req, res);
+  })
+);
 
 // --------------------------
 // Helper: checkAuth for protected routes
@@ -157,9 +176,9 @@ app.get('/', (req, res) => {
     res.send('Welcome to the session-based user management API!');
 });
 
-// Register (POST /register)
+// Register (POST /users)
 // FIX: Add rate limiting for authentication endpoints
-app.post('/register', authLimiter, (req, res) => {
+app.post('/users', authLimiter, (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) {
         return res.status(400).json({
@@ -191,7 +210,7 @@ app.post('/register', authLimiter, (req, res) => {
                         });
                     }
                     res.status(201).json({
-                        message: 'User registered successfully!',
+                        message: 'User created successfully!',
                         user_id: this.lastID
                     });
                 }
@@ -202,14 +221,14 @@ app.post('/register', authLimiter, (req, res) => {
             console.error('Password hashing error:', error.message);
             res.status(500).json({
                 code: 'INTERNAL_SERVER_ERROR',
-                message: 'An error occurred during registration. Please try again.'
+                message: 'An error occurred during user creation. Please try again.'
             });
         });
 });
 
-// Login (POST /login)
+// Login (POST /sessions)
 // FIX: Add rate limiting for authentication endpoints
-app.post('/login', authLimiter, (req, res) => {
+app.post('/sessions', authLimiter, (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) {
         return res.status(400).json({
@@ -240,8 +259,8 @@ app.post('/login', authLimiter, (req, res) => {
                 }
                 // Successful login
                 req.session.user = { id: user.id, username: user.username };
-                res.json({
-                    message: 'Logged in successfully!',
+                res.status(201).json({
+                    message: 'Session created successfully!',
                     user: { id: user.id, username: user.username }
                 });
             } catch (error) {
@@ -249,30 +268,29 @@ app.post('/login', authLimiter, (req, res) => {
                 console.error('Password comparison error:', error.message);
                 res.status(500).json({ 
                     code: 'INTERNAL_SERVER_ERROR', 
-                    message: 'An error occurred during login. Please try again.' 
+                    message: 'An error occurred during session creation. Please try again.' 
                 });
             }
         }
     );
 });
 
-// Logout (DELETE /logout) => protected
-app.delete('/logout', checkAuth, (req, res) => {
+// Logout (DELETE /sessions/current) => protected
+app.delete('/sessions/current', checkAuth, (req, res) => {
     req.session.destroy((err) => {
         if (err) {
             return res
                 .status(500)
-                .json({ code: 'LOGOUT_ERROR', message: 'Logout failed.' });
+                .json({ code: 'SESSION_DELETE_ERROR', message: 'Session deletion failed.' });
         }
         res.clearCookie('connect.sid');
-        res.json({ message: 'Logged out successfully!' });
+        res.status(204).send();
     });
 });
 
-// Profile (GET /profile) => protected
-app.get('/profile', checkAuth, (req, res) => {
+// User Profile (GET /users/me) => protected
+app.get('/users/me', checkAuth, (req, res) => {
     res.json({
-        message: 'This is a protected profile route.',
         user: req.session.user
     });
 });
