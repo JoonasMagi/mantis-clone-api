@@ -21,12 +21,6 @@ A comprehensive issue tracking API built with **Express.js**, **SQLite**, **Sess
 ### Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/JoonasMagi/mantis-clone-api.git
-
-# Navigate to the project directory
-cd mantis-clone-api
-
 # Install dependencies
 npm install
 ```
