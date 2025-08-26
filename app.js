@@ -280,8 +280,8 @@ app.get('/', (req, res) => {
     `);
 });
 
-// Create a new user (POST /users)
-app.post('/users', (req, res) => {
+// Create a new user (POST /register)
+app.post('/register', (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) {
         return res.status(400).json({
@@ -327,8 +327,8 @@ app.post('/users', (req, res) => {
         });
 });
 
-// Create a new session (POST /sessions)
-app.post('/sessions', (req, res) => {
+// Create a new session (POST /login)
+app.post('/login', (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) {
         return res.status(400).json({
@@ -419,8 +419,8 @@ app.post('/logout', checkAuth, (req, res) => {
     });
 });
 
-// Get current user profile (GET /users/me) => protected
-app.get('/users/me', checkAuth, (req, res) => {
+// Get current user profile (GET /profile) => protected
+app.get('/profile', checkAuth, (req, res) => {
     res.json({
         message: 'Current user profile retrieved successfully.',
         user: req.session.user
