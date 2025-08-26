@@ -12,9 +12,10 @@ const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
 
 // Load Swagger documents
-const swaggerDocument = YAML.load('./api.yaml');
 const swaggerDocumentEN = YAML.load('./api-en.yaml');
 const swaggerDocumentET = YAML.load('./api-et.yaml');
+// Use English as default
+const swaggerDocument = swaggerDocumentEN;
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -118,14 +119,23 @@ db.serialize(() => {
 // --------------------------
 // Swagger UI - Multilingual Documentation
 // --------------------------
+
+// Import separate Swagger modules to avoid caching issues
+const swaggerEN = require('./swagger-en');
+const swaggerET = require('./swagger-et');
+
 // Default documentation (English)
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.use('/api-docs', swaggerUi.serve);
+app.get('/api-docs', swaggerUi.setup(swaggerDocumentEN, {
+    customSiteTitle: 'Mantis Clone API - English (Default)',
+    customCss: '.swagger-ui .topbar { display: none }'
+}));
 
 // English documentation
-app.use('/en', swaggerUi.serve, swaggerUi.setup(swaggerDocumentEN));
+app.use('/en', swaggerEN);
 
 // Estonian documentation
-app.use('/et', swaggerUi.serve, swaggerUi.setup(swaggerDocumentET));
+app.use('/et', swaggerET);
 
 // --------------------------
 // Helper: checkAuth for protected routes
@@ -144,9 +154,130 @@ function checkAuth(req, res, _next) {
 // Routes
 // --------------------------
 
-// Home Route (public)
+// Home Route with Language Selection (public)
 app.get('/', (req, res) => {
-    res.send('Welcome to the session-based user management API!');
+    res.send(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Mantis Clone API - Language Selection</title>
+            <style>
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    margin: 0;
+                    padding: 0;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    min-height: 100vh;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                .container {
+                    background: white;
+                    border-radius: 12px;
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+                    padding: 3rem;
+                    text-align: center;
+                    max-width: 500px;
+                    width: 90%;
+                }
+                h1 {
+                    color: #333;
+                    margin-bottom: 0.5rem;
+                    font-size: 2.5rem;
+                    font-weight: 700;
+                }
+                .subtitle {
+                    color: #666;
+                    margin-bottom: 2rem;
+                    font-size: 1.1rem;
+                }
+                .language-buttons {
+                    display: flex;
+                    gap: 1rem;
+                    justify-content: center;
+                    flex-wrap: wrap;
+                    margin-bottom: 2rem;
+                }
+                .lang-btn {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    padding: 1rem 2rem;
+                    background: #667eea;
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 8px;
+                    font-weight: 600;
+                    font-size: 1.1rem;
+                    transition: all 0.3s ease;
+                    border: none;
+                    cursor: pointer;
+                    min-width: 150px;
+                }
+                .lang-btn:hover {
+                    background: #5a6fd8;
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+                }
+                .lang-btn.estonian {
+                    background: #28a745;
+                }
+                .lang-btn.estonian:hover {
+                    background: #218838;
+                    box-shadow: 0 8px 20px rgba(40, 167, 69, 0.3);
+                }
+                .flag {
+                    font-size: 1.5rem;
+                }
+                .info {
+                    color: #666;
+                    font-size: 0.9rem;
+                    line-height: 1.5;
+                    margin-top: 2rem;
+                    padding-top: 2rem;
+                    border-top: 1px solid #eee;
+                }
+                .info a {
+                    color: #667eea;
+                    text-decoration: none;
+                }
+                .info a:hover {
+                    text-decoration: underline;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>🐛 Mantis Clone API</h1>
+                <p class="subtitle">Choose your preferred language for API documentation</p>
+                <p class="subtitle" style="font-size: 0.9rem; color: #888;">Valige API dokumentatsiooni jaoks eelistatud keel</p>
+
+                <div class="language-buttons">
+                    <a href="/en/" class="lang-btn">
+                        <span class="flag">🇬🇧</span>
+                        <span>English</span>
+                    </a>
+                    <a href="/et/" class="lang-btn estonian">
+                        <span class="flag">🇪🇪</span>
+                        <span>Eesti keel</span>
+                    </a>
+                </div>
+
+                <div class="info">
+                    <p><strong>About this API:</strong></p>
+                    <p>A comprehensive issue tracking API built with Express.js, SQLite, and Swagger/OpenAPI 3.0 documentation.</p>
+                    <p><strong>Selle API kohta:</strong></p>
+                    <p>Põhjalik ülesannete jälgimise API, mis on ehitatud Express.js, SQLite ja Swagger/OpenAPI 3.0 dokumentatsiooniga.</p>
+                    <br>
+                    <p>Default documentation: <a href="/api-docs/">/api-docs/</a></p>
+                </div>
+            </div>
+        </body>
+        </html>
+    `);
 });
 
 // Create a new user (POST /users)
@@ -646,5 +777,8 @@ app.use((err, req, res, _unusedNext) => {
 // Start the Server
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
-    console.log(`Swagger docs available at http://localhost:${port}/api-docs`);
+    console.log(`Language selection page: http://localhost:${port}/`);
+    console.log(`English docs: http://localhost:${port}/en/`);
+    console.log(`Estonian docs: http://localhost:${port}/et/`);
+    console.log(`Default docs: http://localhost:${port}/api-docs/`);
 });
