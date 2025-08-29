@@ -4,7 +4,16 @@
   "main": "app.js",
   "scripts": {
     "start": "nodemon -e yaml,json,js  app.js",
-    "dev": "nodemon -e yaml,json,js  app.js"
+    "dev": "nodemon -e yaml,json,js  app.js",
+    "soap": "node src/soap-server.js",
+    "soap:dev": "nodemon src/soap-server.js",
+    "client": "node client/soap-client.js",
+    "example": "node client/example.js",
+    "test": "chmod +x tests/test.sh && ./tests/test.sh",
+    "build": "echo 'No build step required for Node.js'",
+    "docker:build": "docker build -t mantis-soap .",
+    "docker:run": "docker run -p 3001:3001 mantis-soap",
+    "docker:compose": "docker-compose up --build"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
@@ -15,9 +24,11 @@
     "express-rate-limit": "^7.5.0",
     "express-session": "^1.18.1",
     "nodemon": "^3.1.9",
+    "soap": "^1.0.0",
     "sqlite3": "^5.1.6",
     "swagger-ui-express": "^4.6.3",
     "uuid": "^9.0.0",
+    "xml2js": "^0.6.2",
     "yamljs": "^0.3.0"
   },
   "devDependencies": {

@@ -1,0 +1,782 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:tns="http://mantisclone.com/soap"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+             targetNamespace="http://mantisclone.com/soap"
+             elementFormDefault="qualified">
+
+  <!-- Import XSD Schema -->
+  <types>
+    <xsd:schema targetNamespace="http://mantisclone.com/soap"
+                elementFormDefault="qualified">
+      
+      <!-- Common Types -->
+      <xsd:complexType name="ErrorType">
+        <xsd:sequence>
+          <xsd:element name="code" type="xsd:string"/>
+          <xsd:element name="message" type="xsd:string"/>
+          <xsd:element name="details" type="xsd:string" minOccurs="0"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <!-- User Types -->
+      <xsd:complexType name="UserType">
+        <xsd:sequence>
+          <xsd:element name="id" type="xsd:int"/>
+          <xsd:element name="username" type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="RegisterUserType">
+        <xsd:sequence>
+          <xsd:element name="username" type="xsd:string"/>
+          <xsd:element name="password" type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="LoginUserType">
+        <xsd:sequence>
+          <xsd:element name="username" type="xsd:string"/>
+          <xsd:element name="password" type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <!-- Issue Types -->
+      <xsd:simpleType name="IssueStatusType">
+        <xsd:restriction base="xsd:string">
+          <xsd:enumeration value="open"/>
+          <xsd:enumeration value="in_progress"/>
+          <xsd:enumeration value="resolved"/>
+          <xsd:enumeration value="closed"/>
+        </xsd:restriction>
+      </xsd:simpleType>
+
+      <xsd:simpleType name="IssuePriorityType">
+        <xsd:restriction base="xsd:string">
+          <xsd:enumeration value="low"/>
+          <xsd:enumeration value="medium"/>
+          <xsd:enumeration value="high"/>
+          <xsd:enumeration value="critical"/>
+        </xsd:restriction>
+      </xsd:simpleType>
+
+      <xsd:complexType name="IssueType">
+        <xsd:sequence>
+          <xsd:element name="id" type="xsd:string"/>
+          <xsd:element name="title" type="xsd:string"/>
+          <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+          <xsd:element name="status" type="tns:IssueStatusType"/>
+          <xsd:element name="priority" type="tns:IssuePriorityType"/>
+          <xsd:element name="assignee" type="xsd:string" minOccurs="0"/>
+          <xsd:element name="creator" type="xsd:string"/>
+          <xsd:element name="created_at" type="xsd:dateTime"/>
+          <xsd:element name="updated_at" type="xsd:dateTime" minOccurs="0"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="CreateIssueType">
+        <xsd:sequence>
+          <xsd:element name="title" type="xsd:string"/>
+          <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+          <xsd:element name="status" type="tns:IssueStatusType"/>
+          <xsd:element name="priority" type="tns:IssuePriorityType"/>
+          <xsd:element name="assignee" type="xsd:string" minOccurs="0"/>
+          <xsd:element name="creator" type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="UpdateIssueType">
+        <xsd:sequence>
+          <xsd:element name="title" type="xsd:string" minOccurs="0"/>
+          <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+          <xsd:element name="status" type="tns:IssueStatusType" minOccurs="0"/>
+          <xsd:element name="priority" type="tns:IssuePriorityType" minOccurs="0"/>
+          <xsd:element name="assignee" type="xsd:string" minOccurs="0"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <!-- Comment Types -->
+      <xsd:complexType name="CommentType">
+        <xsd:sequence>
+          <xsd:element name="id" type="xsd:string"/>
+          <xsd:element name="issue_id" type="xsd:string"/>
+          <xsd:element name="content" type="xsd:string"/>
+          <xsd:element name="author" type="xsd:string"/>
+          <xsd:element name="created_at" type="xsd:dateTime"/>
+          <xsd:element name="updated_at" type="xsd:dateTime" minOccurs="0"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="CreateCommentType">
+        <xsd:sequence>
+          <xsd:element name="content" type="xsd:string"/>
+          <xsd:element name="author" type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <!-- Label Types -->
+      <xsd:complexType name="LabelType">
+        <xsd:sequence>
+          <xsd:element name="id" type="xsd:string"/>
+          <xsd:element name="name" type="xsd:string"/>
+          <xsd:element name="color" type="xsd:string"/>
+          <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="CreateLabelType">
+        <xsd:sequence>
+          <xsd:element name="name" type="xsd:string"/>
+          <xsd:element name="color" type="xsd:string"/>
+          <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <!-- Milestone Types -->
+      <xsd:simpleType name="MilestoneStatusType">
+        <xsd:restriction base="xsd:string">
+          <xsd:enumeration value="open"/>
+          <xsd:enumeration value="closed"/>
+        </xsd:restriction>
+      </xsd:simpleType>
+
+      <xsd:complexType name="MilestoneType">
+        <xsd:sequence>
+          <xsd:element name="id" type="xsd:string"/>
+          <xsd:element name="title" type="xsd:string"/>
+          <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+          <xsd:element name="due_date" type="xsd:string" minOccurs="0"/>
+          <xsd:element name="status" type="tns:MilestoneStatusType"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="CreateMilestoneType">
+        <xsd:sequence>
+          <xsd:element name="title" type="xsd:string"/>
+          <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+          <xsd:element name="due_date" type="xsd:string" minOccurs="0"/>
+          <xsd:element name="status" type="tns:MilestoneStatusType"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <!-- Array Types -->
+      <xsd:complexType name="IssueArrayType">
+        <xsd:sequence>
+          <xsd:element name="issue" type="tns:IssueType" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="CommentArrayType">
+        <xsd:sequence>
+          <xsd:element name="comment" type="tns:CommentType" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="LabelArrayType">
+        <xsd:sequence>
+          <xsd:element name="label" type="tns:LabelType" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="MilestoneArrayType">
+        <xsd:sequence>
+          <xsd:element name="milestone" type="tns:MilestoneType" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <!-- Pagination Type -->
+      <xsd:complexType name="PaginationType">
+        <xsd:sequence>
+          <xsd:element name="total" type="xsd:int"/>
+          <xsd:element name="page" type="xsd:int"/>
+          <xsd:element name="per_page" type="xsd:int"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="IssueListResponseType">
+        <xsd:sequence>
+          <xsd:element name="data" type="tns:IssueArrayType"/>
+          <xsd:element name="pagination" type="tns:PaginationType"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <!-- Request/Response Elements for User Operations -->
+      <xsd:element name="RegisterUserRequest" type="tns:RegisterUserType"/>
+      <xsd:element name="RegisterUserResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="message" type="xsd:string"/>
+            <xsd:element name="user_id" type="xsd:int"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="LoginUserRequest" type="tns:LoginUserType"/>
+      <xsd:element name="LoginUserResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="message" type="xsd:string"/>
+            <xsd:element name="user" type="tns:UserType"/>
+            <xsd:element name="session_id" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="LogoutRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="session_id" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="LogoutResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="message" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="GetProfileRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="session_id" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="GetProfileResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="message" type="xsd:string"/>
+            <xsd:element name="user" type="tns:UserType"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- Request/Response Elements for Issue Operations -->
+      <xsd:element name="GetIssuesRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="status" type="tns:IssueStatusType" minOccurs="0"/>
+            <xsd:element name="priority" type="tns:IssuePriorityType" minOccurs="0"/>
+            <xsd:element name="page" type="xsd:int" minOccurs="0"/>
+            <xsd:element name="per_page" type="xsd:int" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="GetIssuesResponse" type="tns:IssueListResponseType"/>
+
+      <xsd:element name="CreateIssueRequest" type="tns:CreateIssueType"/>
+      <xsd:element name="CreateIssueResponse" type="tns:IssueType"/>
+
+      <xsd:element name="GetIssueRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="issueId" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="GetIssueResponse" type="tns:IssueType"/>
+
+      <xsd:element name="UpdateIssueRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="issueId" type="xsd:string"/>
+            <xsd:element name="issue" type="tns:UpdateIssueType"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="UpdateIssueResponse" type="tns:IssueType"/>
+
+      <xsd:element name="DeleteIssueRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="issueId" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="DeleteIssueResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="message" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- Request/Response Elements for Comment Operations -->
+      <xsd:element name="GetCommentsRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="issueId" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="GetCommentsResponse" type="tns:CommentArrayType"/>
+
+      <xsd:element name="CreateCommentRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="issueId" type="xsd:string"/>
+            <xsd:element name="comment" type="tns:CreateCommentType"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="CreateCommentResponse" type="tns:CommentType"/>
+
+      <!-- Request/Response Elements for Label Operations -->
+      <xsd:element name="GetLabelsRequest">
+        <xsd:complexType/>
+      </xsd:element>
+      <xsd:element name="GetLabelsResponse" type="tns:LabelArrayType"/>
+
+      <xsd:element name="CreateLabelRequest" type="tns:CreateLabelType"/>
+      <xsd:element name="CreateLabelResponse" type="tns:LabelType"/>
+
+      <!-- Request/Response Elements for Milestone Operations -->
+      <xsd:element name="GetMilestonesRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="status" type="tns:MilestoneStatusType" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="GetMilestonesResponse" type="tns:MilestoneArrayType"/>
+
+      <xsd:element name="CreateMilestoneRequest" type="tns:CreateMilestoneType"/>
+      <xsd:element name="CreateMilestoneResponse" type="tns:MilestoneType"/>
+
+      <!-- SOAP Fault -->
+      <xsd:element name="SoapFault" type="tns:ErrorType"/>
+
+    </xsd:schema>
+  </types>
+
+  <!-- Messages -->
+  <!-- User Messages -->
+  <message name="RegisterUserMessage">
+    <part name="parameters" element="tns:RegisterUserRequest"/>
+  </message>
+  <message name="RegisterUserResponseMessage">
+    <part name="parameters" element="tns:RegisterUserResponse"/>
+  </message>
+
+  <message name="LoginUserMessage">
+    <part name="parameters" element="tns:LoginUserRequest"/>
+  </message>
+  <message name="LoginUserResponseMessage">
+    <part name="parameters" element="tns:LoginUserResponse"/>
+  </message>
+
+  <message name="LogoutMessage">
+    <part name="parameters" element="tns:LogoutRequest"/>
+  </message>
+  <message name="LogoutResponseMessage">
+    <part name="parameters" element="tns:LogoutResponse"/>
+  </message>
+
+  <message name="GetProfileMessage">
+    <part name="parameters" element="tns:GetProfileRequest"/>
+  </message>
+  <message name="GetProfileResponseMessage">
+    <part name="parameters" element="tns:GetProfileResponse"/>
+  </message>
+
+  <!-- Issue Messages -->
+  <message name="GetIssuesMessage">
+    <part name="parameters" element="tns:GetIssuesRequest"/>
+  </message>
+  <message name="GetIssuesResponseMessage">
+    <part name="parameters" element="tns:GetIssuesResponse"/>
+  </message>
+
+  <message name="CreateIssueMessage">
+    <part name="parameters" element="tns:CreateIssueRequest"/>
+  </message>
+  <message name="CreateIssueResponseMessage">
+    <part name="parameters" element="tns:CreateIssueResponse"/>
+  </message>
+
+  <message name="GetIssueMessage">
+    <part name="parameters" element="tns:GetIssueRequest"/>
+  </message>
+  <message name="GetIssueResponseMessage">
+    <part name="parameters" element="tns:GetIssueResponse"/>
+  </message>
+
+  <message name="UpdateIssueMessage">
+    <part name="parameters" element="tns:UpdateIssueRequest"/>
+  </message>
+  <message name="UpdateIssueResponseMessage">
+    <part name="parameters" element="tns:UpdateIssueResponse"/>
+  </message>
+
+  <message name="DeleteIssueMessage">
+    <part name="parameters" element="tns:DeleteIssueRequest"/>
+  </message>
+  <message name="DeleteIssueResponseMessage">
+    <part name="parameters" element="tns:DeleteIssueResponse"/>
+  </message>
+
+  <!-- Comment Messages -->
+  <message name="GetCommentsMessage">
+    <part name="parameters" element="tns:GetCommentsRequest"/>
+  </message>
+  <message name="GetCommentsResponseMessage">
+    <part name="parameters" element="tns:GetCommentsResponse"/>
+  </message>
+
+  <message name="CreateCommentMessage">
+    <part name="parameters" element="tns:CreateCommentRequest"/>
+  </message>
+  <message name="CreateCommentResponseMessage">
+    <part name="parameters" element="tns:CreateCommentResponse"/>
+  </message>
+
+  <!-- Label Messages -->
+  <message name="GetLabelsMessage">
+    <part name="parameters" element="tns:GetLabelsRequest"/>
+  </message>
+  <message name="GetLabelsResponseMessage">
+    <part name="parameters" element="tns:GetLabelsResponse"/>
+  </message>
+
+  <message name="CreateLabelMessage">
+    <part name="parameters" element="tns:CreateLabelRequest"/>
+  </message>
+  <message name="CreateLabelResponseMessage">
+    <part name="parameters" element="tns:CreateLabelResponse"/>
+  </message>
+
+  <!-- Milestone Messages -->
+  <message name="GetMilestonesMessage">
+    <part name="parameters" element="tns:GetMilestonesRequest"/>
+  </message>
+  <message name="GetMilestonesResponseMessage">
+    <part name="parameters" element="tns:GetMilestonesResponse"/>
+  </message>
+
+  <message name="CreateMilestoneMessage">
+    <part name="parameters" element="tns:CreateMilestoneRequest"/>
+  </message>
+  <message name="CreateMilestoneResponseMessage">
+    <part name="parameters" element="tns:CreateMilestoneResponse"/>
+  </message>
+
+  <!-- Fault Message -->
+  <message name="SoapFaultMessage">
+    <part name="fault" element="tns:SoapFault"/>
+  </message>
+
+  <!-- Port Type -->
+  <portType name="MantisClonePortType">
+    <!-- User Operations -->
+    <operation name="RegisterUser">
+      <input message="tns:RegisterUserMessage"/>
+      <output message="tns:RegisterUserResponseMessage"/>
+      <fault name="SoapFault" message="tns:SoapFaultMessage"/>
+    </operation>
+
+    <operation name="LoginUser">
+      <input message="tns:LoginUserMessage"/>
+      <output message="tns:LoginUserResponseMessage"/>
+      <fault name="SoapFault" message="tns:SoapFaultMessage"/>
+    </operation>
+
+    <operation name="Logout">
+      <input message="tns:LogoutMessage"/>
+      <output message="tns:LogoutResponseMessage"/>
+      <fault name="SoapFault" message="tns:SoapFaultMessage"/>
+    </operation>
+
+    <operation name="GetProfile">
+      <input message="tns:GetProfileMessage"/>
+      <output message="tns:GetProfileResponseMessage"/>
+      <fault name="SoapFault" message="tns:SoapFaultMessage"/>
+    </operation>
+
+    <!-- Issue Operations -->
+    <operation name="GetIssues">
+      <input message="tns:GetIssuesMessage"/>
+      <output message="tns:GetIssuesResponseMessage"/>
+      <fault name="SoapFault" message="tns:SoapFaultMessage"/>
+    </operation>
+
+    <operation name="CreateIssue">
+      <input message="tns:CreateIssueMessage"/>
+      <output message="tns:CreateIssueResponseMessage"/>
+      <fault name="SoapFault" message="tns:SoapFaultMessage"/>
+    </operation>
+
+    <operation name="GetIssue">
+      <input message="tns:GetIssueMessage"/>
+      <output message="tns:GetIssueResponseMessage"/>
+      <fault name="SoapFault" message="tns:SoapFaultMessage"/>
+    </operation>
+
+    <operation name="UpdateIssue">
+      <input message="tns:UpdateIssueMessage"/>
+      <output message="tns:UpdateIssueResponseMessage"/>
+      <fault name="SoapFault" message="tns:SoapFaultMessage"/>
+    </operation>
+
+    <operation name="DeleteIssue">
+      <input message="tns:DeleteIssueMessage"/>
+      <output message="tns:DeleteIssueResponseMessage"/>
+      <fault name="SoapFault" message="tns:SoapFaultMessage"/>
+    </operation>
+
+    <!-- Comment Operations -->
+    <operation name="GetComments">
+      <input message="tns:GetCommentsMessage"/>
+      <output message="tns:GetCommentsResponseMessage"/>
+      <fault name="SoapFault" message="tns:SoapFaultMessage"/>
+    </operation>
+
+    <operation name="CreateComment">
+      <input message="tns:CreateCommentMessage"/>
+      <output message="tns:CreateCommentResponseMessage"/>
+      <fault name="SoapFault" message="tns:SoapFaultMessage"/>
+    </operation>
+
+    <!-- Label Operations -->
+    <operation name="GetLabels">
+      <input message="tns:GetLabelsMessage"/>
+      <output message="tns:GetLabelsResponseMessage"/>
+      <fault name="SoapFault" message="tns:SoapFaultMessage"/>
+    </operation>
+
+    <operation name="CreateLabel">
+      <input message="tns:CreateLabelMessage"/>
+      <output message="tns:CreateLabelResponseMessage"/>
+      <fault name="SoapFault" message="tns:SoapFaultMessage"/>
+    </operation>
+
+    <!-- Milestone Operations -->
+    <operation name="GetMilestones">
+      <input message="tns:GetMilestonesMessage"/>
+      <output message="tns:GetMilestonesResponseMessage"/>
+      <fault name="SoapFault" message="tns:SoapFaultMessage"/>
+    </operation>
+
+    <operation name="CreateMilestone">
+      <input message="tns:CreateMilestoneMessage"/>
+      <output message="tns:CreateMilestoneResponseMessage"/>
+      <fault name="SoapFault" message="tns:SoapFaultMessage"/>
+    </operation>
+  </portType>
+
+  <!-- SOAP Binding -->
+  <binding name="MantisCloneSoapBinding" type="tns:MantisClonePortType">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+
+    <!-- User Operations -->
+    <operation name="RegisterUser">
+      <soap:operation soapAction="http://mantisclone.com/soap/RegisterUser"/>
+      <input>
+        <soap:body use="literal"/>
+      </input>
+      <output>
+        <soap:body use="literal"/>
+      </output>
+      <fault name="SoapFault">
+        <soap:fault name="SoapFault" use="literal"/>
+      </fault>
+    </operation>
+
+    <operation name="LoginUser">
+      <soap:operation soapAction="http://mantisclone.com/soap/LoginUser"/>
+      <input>
+        <soap:body use="literal"/>
+      </input>
+      <output>
+        <soap:body use="literal"/>
+      </output>
+      <fault name="SoapFault">
+        <soap:fault name="SoapFault" use="literal"/>
+      </fault>
+    </operation>
+
+    <operation name="Logout">
+      <soap:operation soapAction="http://mantisclone.com/soap/Logout"/>
+      <input>
+        <soap:body use="literal"/>
+      </input>
+      <output>
+        <soap:body use="literal"/>
+      </output>
+      <fault name="SoapFault">
+        <soap:fault name="SoapFault" use="literal"/>
+      </fault>
+    </operation>
+
+    <operation name="GetProfile">
+      <soap:operation soapAction="http://mantisclone.com/soap/GetProfile"/>
+      <input>
+        <soap:body use="literal"/>
+      </input>
+      <output>
+        <soap:body use="literal"/>
+      </output>
+      <fault name="SoapFault">
+        <soap:fault name="SoapFault" use="literal"/>
+      </fault>
+    </operation>
+
+    <!-- Issue Operations -->
+    <operation name="GetIssues">
+      <soap:operation soapAction="http://mantisclone.com/soap/GetIssues"/>
+      <input>
+        <soap:body use="literal"/>
+      </input>
+      <output>
+        <soap:body use="literal"/>
+      </output>
+      <fault name="SoapFault">
+        <soap:fault name="SoapFault" use="literal"/>
+      </fault>
+    </operation>
+
+    <operation name="CreateIssue">
+      <soap:operation soapAction="http://mantisclone.com/soap/CreateIssue"/>
+      <input>
+        <soap:body use="literal"/>
+      </input>
+      <output>
+        <soap:body use="literal"/>
+      </output>
+      <fault name="SoapFault">
+        <soap:fault name="SoapFault" use="literal"/>
+      </fault>
+    </operation>
+
+    <operation name="GetIssue">
+      <soap:operation soapAction="http://mantisclone.com/soap/GetIssue"/>
+      <input>
+        <soap:body use="literal"/>
+      </input>
+      <output>
+        <soap:body use="literal"/>
+      </output>
+      <fault name="SoapFault">
+        <soap:fault name="SoapFault" use="literal"/>
+      </fault>
+    </operation>
+
+    <operation name="UpdateIssue">
+      <soap:operation soapAction="http://mantisclone.com/soap/UpdateIssue"/>
+      <input>
+        <soap:body use="literal"/>
+      </input>
+      <output>
+        <soap:body use="literal"/>
+      </output>
+      <fault name="SoapFault">
+        <soap:fault name="SoapFault" use="literal"/>
+      </fault>
+    </operation>
+
+    <operation name="DeleteIssue">
+      <soap:operation soapAction="http://mantisclone.com/soap/DeleteIssue"/>
+      <input>
+        <soap:body use="literal"/>
+      </input>
+      <output>
+        <soap:body use="literal"/>
+      </output>
+      <fault name="SoapFault">
+        <soap:fault name="SoapFault" use="literal"/>
+      </fault>
+    </operation>
+
+    <!-- Comment Operations -->
+    <operation name="GetComments">
+      <soap:operation soapAction="http://mantisclone.com/soap/GetComments"/>
+      <input>
+        <soap:body use="literal"/>
+      </input>
+      <output>
+        <soap:body use="literal"/>
+      </output>
+      <fault name="SoapFault">
+        <soap:fault name="SoapFault" use="literal"/>
+      </fault>
+    </operation>
+
+    <operation name="CreateComment">
+      <soap:operation soapAction="http://mantisclone.com/soap/CreateComment"/>
+      <input>
+        <soap:body use="literal"/>
+      </input>
+      <output>
+        <soap:body use="literal"/>
+      </output>
+      <fault name="SoapFault">
+        <soap:fault name="SoapFault" use="literal"/>
+      </fault>
+    </operation>
+
+    <!-- Label Operations -->
+    <operation name="GetLabels">
+      <soap:operation soapAction="http://mantisclone.com/soap/GetLabels"/>
+      <input>
+        <soap:body use="literal"/>
+      </input>
+      <output>
+        <soap:body use="literal"/>
+      </output>
+      <fault name="SoapFault">
+        <soap:fault name="SoapFault" use="literal"/>
+      </fault>
+    </operation>
+
+    <operation name="CreateLabel">
+      <soap:operation soapAction="http://mantisclone.com/soap/CreateLabel"/>
+      <input>
+        <soap:body use="literal"/>
+      </input>
+      <output>
+        <soap:body use="literal"/>
+      </output>
+      <fault name="SoapFault">
+        <soap:fault name="SoapFault" use="literal"/>
+      </fault>
+    </operation>
+
+    <!-- Milestone Operations -->
+    <operation name="GetMilestones">
+      <soap:operation soapAction="http://mantisclone.com/soap/GetMilestones"/>
+      <input>
+        <soap:body use="literal"/>
+      </input>
+      <output>
+        <soap:body use="literal"/>
+      </output>
+      <fault name="SoapFault">
+        <soap:fault name="SoapFault" use="literal"/>
+      </fault>
+    </operation>
+
+    <operation name="CreateMilestone">
+      <soap:operation soapAction="http://mantisclone.com/soap/CreateMilestone"/>
+      <input>
+        <soap:body use="literal"/>
+      </input>
+      <output>
+        <soap:body use="literal"/>
+      </output>
+      <fault name="SoapFault">
+        <soap:fault name="SoapFault" use="literal"/>
+      </fault>
+    </operation>
+  </binding>
+
+  <!-- Service -->
+  <service name="MantisCloneService">
+    <documentation>Mantis Clone SOAP Service</documentation>
+    <port name="MantisCloneSoapPort" binding="tns:MantisCloneSoapBinding">
+      <soap:address location="http://localhost:3001/soap"/>
+    </port>
+  </service>
+
+</definitions>
