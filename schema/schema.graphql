@@ -1,0 +1,204 @@
+# GraphQL Schema for Mantis Clone API
+# Provides the same functionality as the REST API
+
+scalar DateTime
+
+# Enums
+enum IssueStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum IssuePriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum MilestoneStatus {
+  OPEN
+  CLOSED
+}
+
+# Types
+type User {
+  id: Int!
+  username: String!
+  created_at: DateTime!
+  updated_at: DateTime
+}
+
+type Issue {
+  id: ID!
+  title: String!
+  description: String
+  status: IssueStatus!
+  priority: IssuePriority!
+  assignee: String
+  creator: String!
+  created_at: DateTime!
+  updated_at: DateTime
+}
+
+type Label {
+  id: ID!
+  name: String!
+  color: String!
+  description: String
+}
+
+type Comment {
+  id: ID!
+  issue_id: ID!
+  content: String!
+  author: String!
+  created_at: DateTime!
+  updated_at: DateTime
+}
+
+type Milestone {
+  id: ID!
+  title: String!
+  description: String
+  due_date: String
+  status: MilestoneStatus!
+  created_at: DateTime
+  updated_at: DateTime
+}
+
+# Pagination
+type PaginationInfo {
+  total: Int!
+  page: Int!
+  per_page: Int!
+}
+
+type IssuesResponse {
+  data: [Issue!]!
+  pagination: PaginationInfo!
+}
+
+# Authentication responses
+type AuthResponse {
+  message: String!
+  user_id: Int
+  session_token: String
+}
+
+type LogoutResponse {
+  message: String!
+}
+
+# Error type
+type Error {
+  code: String!
+  message: String!
+  details: String
+}
+
+# Input types
+input RegisterUserInput {
+  username: String!
+  password: String!
+}
+
+input LoginUserInput {
+  username: String!
+  password: String!
+}
+
+input CreateIssueInput {
+  title: String!
+  description: String
+  status: IssueStatus!
+  priority: IssuePriority!
+  assignee: String
+  creator: String!
+}
+
+input UpdateIssueInput {
+  title: String
+  description: String
+  status: IssueStatus
+  priority: IssuePriority
+  assignee: String
+}
+
+input CreateLabelInput {
+  name: String!
+  color: String!
+  description: String
+}
+
+input CreateCommentInput {
+  content: String!
+  author: String!
+}
+
+input CreateMilestoneInput {
+  title: String!
+  description: String
+  due_date: String
+  status: MilestoneStatus!
+}
+
+# Filters
+input IssueFilters {
+  status: IssueStatus
+  priority: IssuePriority
+  label: String
+  milestone: ID
+}
+
+input PaginationInput {
+  page: Int = 1
+  per_page: Int = 20
+}
+
+# Root types
+type Query {
+  # Authentication
+  profile(session_token: String!): User
+
+  # Issues
+  issues(
+    filters: IssueFilters
+    pagination: PaginationInput
+    session_token: String
+  ): IssuesResponse!
+  
+  issue(id: ID!, session_token: String): Issue
+
+  # Labels
+  labels(session_token: String): [Label!]!
+
+  # Comments
+  comments(issue_id: ID!, session_token: String): [Comment!]!
+
+  # Milestones
+  milestones(session_token: String): [Milestone!]!
+}
+
+type Mutation {
+  # Authentication
+  registerUser(input: RegisterUserInput!): AuthResponse!
+  loginUser(input: LoginUserInput!): AuthResponse!
+  logoutUser(session_token: String!): LogoutResponse!
+
+  # Issues
+  createIssue(input: CreateIssueInput!, session_token: String!): Issue!
+  updateIssue(id: ID!, input: UpdateIssueInput!, session_token: String!): Issue!
+  deleteIssue(id: ID!, session_token: String!): Boolean!
+
+  # Labels
+  createLabel(input: CreateLabelInput!, session_token: String!): Label!
+
+  # Comments
+  createComment(issue_id: ID!, input: CreateCommentInput!, session_token: String!): Comment!
+
+  # Milestones
+  createMilestone(input: CreateMilestoneInput!, session_token: String!): Milestone!
+}

@@ -1,0 +1,33 @@
+{
+  "name": "mantis-clone-graphql-api",
+  "version": "1.0.0",
+  "description": "GraphQL API for Mantis Clone - functionally equivalent to the REST API",
+  "main": "src/graphql-server.js",
+  "scripts": {
+    "start": "node src/graphql-server.js",
+    "dev": "nodemon src/graphql-server.js",
+    "test": "node tests/graphql-test.js"
+  },
+  "dependencies": {
+    "apollo-server-express": "^3.12.0",
+    "express": "^4.18.2",
+    "graphql": "^16.6.0",
+    "sqlite3": "^5.1.6",
+    "uuid": "^9.0.0",
+    "bcrypt": "^5.1.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  },
+  "keywords": [
+    "graphql",
+    "api",
+    "issue-tracker",
+    "mantis",
+    "apollo-server"
+  ],
+  "author": "Mantis Clone API Team",
+  "license": "MIT"
+}

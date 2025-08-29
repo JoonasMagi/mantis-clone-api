@@ -1,0 +1,33 @@
+# Dockerfile for GraphQL Server
+FROM node:18-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY graphql-package.json package.json
+COPY package-lock.json* ./
+
+# Install dependencies
+RUN npm install
+
+# Copy application files
+COPY schema/ ./schema/
+COPY src/graphql-server.js ./src/
+COPY database.sqlite* ./
+
+# Create database if it doesn't exist
+RUN if [ ! -f "database.sqlite" ]; then \
+    echo "Creating database..." && \
+    node -e "const sqlite3 = require('sqlite3').verbose(); const db = new sqlite3.Database('./database.sqlite'); db.serialize(() => { db.run('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE NOT NULL, password TEXT NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP);'); db.run('CREATE TABLE IF NOT EXISTS issues (id TEXT PRIMARY KEY, title TEXT NOT NULL, description TEXT, status TEXT NOT NULL CHECK (status IN (\"open\",\"in_progress\",\"resolved\",\"closed\")), priority TEXT NOT NULL CHECK (priority IN (\"low\",\"medium\",\"high\",\"critical\")), assignee TEXT, creator TEXT NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP);'); db.run('CREATE TABLE IF NOT EXISTS labels (id TEXT PRIMARY KEY, name TEXT NOT NULL, color TEXT NOT NULL, description TEXT);'); db.run('CREATE TABLE IF NOT EXISTS comments (id TEXT PRIMARY KEY, issue_id TEXT NOT NULL, content TEXT NOT NULL, author TEXT NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP);'); db.run('CREATE TABLE IF NOT EXISTS milestones (id TEXT PRIMARY KEY, title TEXT NOT NULL, description TEXT, due_date TEXT, status TEXT NOT NULL CHECK (status IN (\"open\",\"closed\")), created_at TIMESTAMP, updated_at TIMESTAMP);'); }); db.close();"; \
+    fi
+
+# Expose port
+EXPOSE 4000
+
+# Set environment variables
+ENV GRAPHQL_PORT=4000
+ENV NODE_ENV=production
+
+# Start the server
+CMD ["node", "src/graphql-server.js"]
