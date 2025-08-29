@@ -1,0 +1,35 @@
+{
+  "name": "mantis-clone-grpc",
+  "version": "1.0.0",
+  "description": "gRPC implementation of Mantis Clone API",
+  "main": "src/grpc-server.js",
+  "scripts": {
+    "start": "node src/grpc-server.js",
+    "dev": "nodemon src/grpc-server.js",
+    "proto:compile": "mkdir -p generated && grpc_tools_node_protoc --js_out=import_style=commonjs,binary:./generated --grpc_out=grpc_js:./generated --plugin=protoc-gen-grpc=./node_modules/.bin/grpc_tools_node_protoc_plugin -I ./proto proto/mantis.proto",
+    "test": "node tests/grpc-equivalence-test.js",
+    "demo": "node client/grpc-client.js"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.9.0",
+    "@grpc/proto-loader": "^0.7.8",
+    "axios": "^1.5.0",
+    "bcrypt": "^5.1.0",
+    "sqlite3": "^5.1.6",
+    "uuid": "^9.0.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "grpc-tools": "^1.12.4"
+  },
+  "keywords": [
+    "grpc",
+    "api",
+    "issue-tracker",
+    "mantis",
+    "sqlite"
+  ],
+  "author": "Mantis Clone gRPC",
+  "license": "MIT"
+}

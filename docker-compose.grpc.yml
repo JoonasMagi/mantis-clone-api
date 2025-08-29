@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  mantis-grpc:
+    build:
+      context: .
+      dockerfile: Dockerfile.grpc
+    ports:
+      - "50051:50051"
+    environment:
+      - GRPC_PORT=50051
+      - NODE_ENV=production
+    volumes:
+      - ./mantis.db:/app/mantis.db:rw
+      - ./logs:/app/logs:rw
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "const grpc = require('@grpc/grpc-js'); const client = new grpc.Client('localhost:50051', grpc.credentials.createInsecure()); client.waitForReady(Date.now() + 1000, (err) => process.exit(err ? 1 : 0));"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - mantis-network
+
+  # Optional: Run both REST and gRPC together
+  mantis-rest:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    volumes:
+      - ./mantis.db:/app/mantis.db:rw
+    restart: unless-stopped
+    networks:
+      - mantis-network
+    profiles:
+      - full-stack
+
+networks:
+  mantis-network:
+    driver: bridge
+
+volumes:
+  mantis-data:
+    driver: local

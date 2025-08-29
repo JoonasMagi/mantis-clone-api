@@ -44,7 +44,7 @@ function initializeDatabase() {
         CREATE TABLE IF NOT EXISTS labels (
           id          TEXT PRIMARY KEY,
           name        TEXT NOT NULL,
-          color       TEXT NOT NULL CHECK (color GLOB '^#[0-9A-Fa-f]{6}$'),
+          color       TEXT NOT NULL CHECK (color GLOB '#[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]'),
           description TEXT
         );
       `);
@@ -66,7 +66,9 @@ function initializeDatabase() {
           title       TEXT NOT NULL,
           description TEXT,
           due_date    TEXT,
-          status      TEXT NOT NULL CHECK (status IN ('open','closed'))
+          status      TEXT NOT NULL CHECK (status IN ('open','closed')),
+          created_at  TIMESTAMP,
+          updated_at  TIMESTAMP
         );
       `, function(err) {
         if (err) {

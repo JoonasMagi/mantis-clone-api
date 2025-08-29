@@ -1,0 +1,325 @@
+syntax = "proto3";
+
+package mantis;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "./mantis";
+
+// =============================================================================
+// Common Types
+// =============================================================================
+
+message Error {
+  string code = 1;
+  string message = 2;
+  map<string, string> details = 3;
+}
+
+message PaginationRequest {
+  int32 page = 1;
+  int32 per_page = 2;
+}
+
+message PaginationResponse {
+  int32 total = 1;
+  int32 page = 2;
+  int32 per_page = 3;
+}
+
+// =============================================================================
+// User/Authentication Messages
+// =============================================================================
+
+message User {
+  int32 id = 1;
+  string username = 2;
+}
+
+message RegisterRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message RegisterResponse {
+  string message = 1;
+  int32 user_id = 2;
+}
+
+message LoginRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string message = 1;
+  User user = 2;
+  string session_token = 3; // For gRPC session management
+}
+
+message LogoutRequest {
+  string session_token = 1;
+}
+
+message LogoutResponse {
+  string message = 1;
+}
+
+message GetProfileRequest {
+  string session_token = 1;
+}
+
+message GetProfileResponse {
+  string message = 1;
+  User user = 2;
+}
+
+// =============================================================================
+// Label Messages
+// =============================================================================
+
+message Label {
+  string id = 1;
+  string name = 2;
+  string color = 3;
+  string description = 4;
+}
+
+message CreateLabelRequest {
+  string session_token = 1;
+  string name = 2;
+  string color = 3;
+  string description = 4;
+}
+
+message UpdateLabelRequest {
+  string session_token = 1;
+  string label_id = 2;
+  optional string name = 3;
+  optional string color = 4;
+  optional string description = 5;
+}
+
+message GetLabelsRequest {
+  // No authentication required for listing labels
+}
+
+message GetLabelsResponse {
+  repeated Label labels = 1;
+}
+
+message DeleteLabelRequest {
+  string session_token = 1;
+  string label_id = 2;
+}
+
+// =============================================================================
+// Milestone Messages
+// =============================================================================
+
+enum MilestoneStatus {
+  MILESTONE_STATUS_UNSPECIFIED = 0;
+  MILESTONE_STATUS_OPEN = 1;
+  MILESTONE_STATUS_CLOSED = 2;
+}
+
+message Milestone {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  string due_date = 4; // ISO date string
+  MilestoneStatus status = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+message CreateMilestoneRequest {
+  string session_token = 1;
+  string title = 2;
+  string description = 3;
+  string due_date = 4;
+  MilestoneStatus status = 5;
+}
+
+message UpdateMilestoneRequest {
+  string session_token = 1;
+  string milestone_id = 2;
+  optional string title = 3;
+  optional string description = 4;
+  optional string due_date = 5;
+  optional MilestoneStatus status = 6;
+}
+
+message GetMilestonesRequest {
+  optional MilestoneStatus status = 1;
+}
+
+message GetMilestonesResponse {
+  repeated Milestone milestones = 1;
+}
+
+message DeleteMilestoneRequest {
+  string session_token = 1;
+  string milestone_id = 2;
+}
+
+// =============================================================================
+// Issue Messages
+// =============================================================================
+
+enum IssueStatus {
+  ISSUE_STATUS_UNSPECIFIED = 0;
+  ISSUE_STATUS_OPEN = 1;
+  ISSUE_STATUS_IN_PROGRESS = 2;
+  ISSUE_STATUS_RESOLVED = 3;
+  ISSUE_STATUS_CLOSED = 4;
+}
+
+enum IssuePriority {
+  ISSUE_PRIORITY_UNSPECIFIED = 0;
+  ISSUE_PRIORITY_LOW = 1;
+  ISSUE_PRIORITY_MEDIUM = 2;
+  ISSUE_PRIORITY_HIGH = 3;
+  ISSUE_PRIORITY_CRITICAL = 4;
+}
+
+message Issue {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  IssueStatus status = 4;
+  IssuePriority priority = 5;
+  string assignee = 6; // UUID
+  string creator = 7;  // UUID
+  repeated Label labels = 8;
+  optional Milestone milestone = 9;
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp updated_at = 11;
+}
+
+message CreateIssueRequest {
+  string session_token = 1;
+  string title = 2;
+  string description = 3;
+  IssueStatus status = 4;
+  IssuePriority priority = 5;
+  optional string assignee = 6;
+  string creator = 7;
+  repeated Label labels = 8;
+  optional Milestone milestone = 9;
+}
+
+message UpdateIssueRequest {
+  string session_token = 1;
+  string issue_id = 2;
+  optional string title = 3;
+  optional string description = 4;
+  optional IssueStatus status = 5;
+  optional IssuePriority priority = 6;
+  optional string assignee = 7;
+  repeated Label labels = 8;
+  optional Milestone milestone = 9;
+}
+
+message GetIssuesRequest {
+  optional IssueStatus status = 1;
+  optional IssuePriority priority = 2;
+  optional string label = 3;
+  optional string milestone = 4;
+  PaginationRequest pagination = 5;
+}
+
+message GetIssuesResponse {
+  repeated Issue data = 1;
+  PaginationResponse pagination = 2;
+}
+
+message GetIssueRequest {
+  string issue_id = 1;
+}
+
+message DeleteIssueRequest {
+  string session_token = 1;
+  string issue_id = 2;
+}
+
+// =============================================================================
+// Comment Messages
+// =============================================================================
+
+message Comment {
+  string id = 1;
+  string issue_id = 2;
+  string content = 3;
+  string author = 4; // UUID
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+message CreateCommentRequest {
+  string session_token = 1;
+  string issue_id = 2;
+  string content = 3;
+  string author = 4;
+}
+
+message UpdateCommentRequest {
+  string session_token = 1;
+  string comment_id = 2;
+  optional string content = 3;
+  optional string author = 4;
+}
+
+message GetCommentsRequest {
+  string issue_id = 1;
+}
+
+message GetCommentsResponse {
+  repeated Comment comments = 1;
+}
+
+message DeleteCommentRequest {
+  string session_token = 1;
+  string comment_id = 2;
+}
+
+// =============================================================================
+// Service Definitions
+// =============================================================================
+
+service AuthService {
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+  rpc GetProfile(GetProfileRequest) returns (GetProfileResponse);
+}
+
+service IssueService {
+  rpc GetIssues(GetIssuesRequest) returns (GetIssuesResponse);
+  rpc CreateIssue(CreateIssueRequest) returns (Issue);
+  rpc GetIssue(GetIssueRequest) returns (Issue);
+  rpc UpdateIssue(UpdateIssueRequest) returns (Issue);
+  rpc DeleteIssue(DeleteIssueRequest) returns (google.protobuf.Empty);
+}
+
+service CommentService {
+  rpc GetComments(GetCommentsRequest) returns (GetCommentsResponse);
+  rpc CreateComment(CreateCommentRequest) returns (Comment);
+  rpc UpdateComment(UpdateCommentRequest) returns (Comment);
+  rpc DeleteComment(DeleteCommentRequest) returns (google.protobuf.Empty);
+}
+
+service LabelService {
+  rpc GetLabels(GetLabelsRequest) returns (GetLabelsResponse);
+  rpc CreateLabel(CreateLabelRequest) returns (Label);
+  rpc UpdateLabel(UpdateLabelRequest) returns (Label);
+  rpc DeleteLabel(DeleteLabelRequest) returns (google.protobuf.Empty);
+}
+
+service MilestoneService {
+  rpc GetMilestones(GetMilestonesRequest) returns (GetMilestonesResponse);
+  rpc CreateMilestone(CreateMilestoneRequest) returns (Milestone);
+  rpc UpdateMilestone(UpdateMilestoneRequest) returns (Milestone);
+  rpc DeleteMilestone(DeleteMilestoneRequest) returns (google.protobuf.Empty);
+}
