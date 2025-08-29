@@ -22,7 +22,11 @@ const port = process.env.PORT || 3000;
 
 // CORS Configuration
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:3000'], // Allow frontend and docs
+    origin: [
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'https://mantis-clone.joonasmagi.me'  // Production frontend domain
+    ],
     credentials: true, // Allow cookies/sessions
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
@@ -43,8 +47,8 @@ app.use(
         cookie: {
             maxAge: 1000 * 60 * 60, // 1 hour
             httpOnly: true, // Prevent XSS attacks
-            secure: false, // Set to true in production with HTTPS
-            sameSite: 'lax' // CSRF protection
+            secure: true, // Set to true in production with HTTPS
+            sameSite: 'none' // Required for cross-domain HTTPS
         }
     })
 );
@@ -85,11 +89,13 @@ db.serialize(() => {
     );
   `);
 
+    // Drop and recreate labels table without the problematic constraint
+    db.run(`DROP TABLE IF EXISTS labels`);
     db.run(`
-    CREATE TABLE IF NOT EXISTS labels (
+    CREATE TABLE labels (
       id          TEXT PRIMARY KEY,
       name        TEXT NOT NULL,
-      color       TEXT NOT NULL CHECK (color GLOB '^#[0-9A-Fa-f]{6}$'),
+      color       TEXT NOT NULL,
       description TEXT
     );
   `);
@@ -393,8 +399,8 @@ app.delete('/sessions/:sessionId', checkAuth, (req, res) => {
         res.clearCookie('connect.sid', {
             path: '/',
             httpOnly: true,
-            secure: false,
-            sameSite: 'lax'
+            secure: true,
+            sameSite: 'none'
         });
         res.json({ message: 'Session deleted successfully!' });
     });
@@ -412,8 +418,8 @@ app.post('/logout', checkAuth, (req, res) => {
         res.clearCookie('connect.sid', {
             path: '/',
             httpOnly: true,
-            secure: false,
-            sameSite: 'lax'
+            secure: true,
+            sameSite: 'none'
         });
         res.json({ message: 'Logged out successfully!' });
     });
@@ -674,19 +680,48 @@ app.get('/labels', (req, res) => {
 // POST /labels
 app.post('/labels', (req, res) => {
     const { name, color, description } = req.body;
+
+    // Debug: log received data
+    console.log('Labels POST data:', { name, color, description });
+
     if (!name || !color) {
         return res.status(400).json({
             code: 'INVALID_INPUT',
             message: 'name and color are required.'
         });
     }
+
+    // Normalize color format - ensure it starts with # and is 6 chars
+    let normalizedColor = color;
+    if (!normalizedColor.startsWith('#')) {
+        normalizedColor = '#' + normalizedColor;
+    }
+
+    // If it's 3 chars (#RGB), expand to 6 chars (#RRGGBB)
+    if (normalizedColor.length === 4) {
+        normalizedColor = '#' + normalizedColor[1] + normalizedColor[1] +
+                         normalizedColor[2] + normalizedColor[2] +
+                         normalizedColor[3] + normalizedColor[3];
+    }
+
+    // Validate color format (must be #RRGGBB - exactly 7 characters total)
+    const colorRegex = /^#[0-9A-Fa-f]{6}$/;
+    if (normalizedColor.length !== 7 || !colorRegex.test(normalizedColor)) {
+        return res.status(400).json({
+            code: 'INVALID_COLOR',
+            message: `Color must be exactly 7 characters in format #RRGGBB (e.g., #FF0000). Received: "${color}" (${color.length} chars), normalized: "${normalizedColor}" (${normalizedColor.length} chars)`
+        });
+    }
+
+    console.log('Color normalized:', color, '->', normalizedColor);
+
     const newId = uuidv4();
     db.run(
         `
     INSERT INTO labels (id, name, color, description)
     VALUES (?, ?, ?, ?)
     `,
-        [newId, name, color, description || ''],
+        [newId, name, normalizedColor, description || ''],
         function (err) {
             if (err) {
                 return res
@@ -726,10 +761,15 @@ app.get('/milestones', (req, res) => {
 // POST /milestones
 app.post('/milestones', (req, res) => {
     const { title, description, due_date, status } = req.body;
-    if (!title || !description || !due_date || !status) {
+
+    // Debug: log received data
+    console.log('Milestones POST data:', { title, description, due_date, status });
+
+    if (!title || !status) {
         return res.status(400).json({
             code: 'INVALID_INPUT',
-            message: 'title, due_date, status, and description are required.'
+            message: 'title and status are required.',
+            received: { title, description, due_date, status }
         });
     }
     const newId = uuidv4();
@@ -738,7 +778,7 @@ app.post('/milestones', (req, res) => {
     INSERT INTO milestones (id, title, description, due_date, status)
     VALUES (?, ?, ?, ?, ?)
     `,
-        [newId, title, description, due_date, status],
+        [newId, title, description || '', due_date || null, status],
         function (err) {
             if (err) {
                 return res.status(500).json({ code: 'DB_ERROR', message: err.message });
